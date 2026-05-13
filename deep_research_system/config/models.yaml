@@ -1,0 +1,152 @@
+# 模型配置
+# 所有模型均为国产模型，兼容 OpenAI 接口
+models:
+  # DeepSeek - 深度求索，通用对话模型，成本低，上下文长
+  - name: deepseek-chat
+    provider: deepseek
+    api_base_env: DEEPSEEK_API_BASE
+    api_key_env: DEEPSEEK_API_KEY
+    model_name_env: DEEPSEEK_MODEL
+    capabilities:
+      - chinese
+      - long_context
+      - reasoning
+      - writing
+      - code
+    cost_tier: low
+    latency_tier: medium
+    context_window: 128000
+    max_tokens_env: DEEPSEEK_MAX_TOKENS
+    temperature_env: DEEPSEEK_TEMPERATURE
+    enabled: true
+    description: "深度求索通用对话模型，成本低，上下文长，适合通用任务"
+
+  # 智谱AI GLM-4 - 强推理模型，适合复杂分析和规划
+  - name: glm-4
+    provider: zhipu
+    api_base_env: ZHIPU_API_BASE
+    api_key_env: ZHIPU_API_KEY
+    model_name_env: ZHIPU_MODEL
+    capabilities:
+      - chinese
+      - strong_reasoning
+      - planning
+      - analysis
+      - critique
+    cost_tier: mid
+    latency_tier: medium
+    context_window: 128000
+    max_tokens_env: ZHIPU_MAX_TOKENS
+    temperature_env: ZHIPU_TEMPERATURE
+    enabled: true
+    description: "智谱AI GLM-4，强推理能力，适合复杂分析和规划任务"
+
+  # 月之暗面 Kimi - 长上下文模型，适合阅读和分析
+  - name: moonshot-v1-8k
+    provider: kimi
+    api_base_env: KIMI_API_BASE
+    api_key_env: KIMI_API_KEY
+    model_name_env: KIMI_MODEL
+    capabilities:
+      - chinese
+      - very_long_context
+      - reading
+      - extraction
+      - summarization
+    cost_tier: low
+    latency_tier: medium
+    context_window: 128000
+    max_tokens_env: KIMI_MAX_TOKENS
+    temperature_env: KIMI_TEMPERATURE
+    enabled: true
+    description: "月之暗面 Kimi，超长上下文，适合文档阅读和摘要提取"
+
+  # 豆包 - 字节跳动，搜索增强模型
+  - name: doubao-search
+    provider: doubao
+    api_base_env: DOUBAO_API_BASE
+    api_key_env: DOUBAO_API_KEY
+    model_name_env: DOUBAO_MODEL
+    capabilities:
+      - web_search_native
+      - chinese
+      - multimodal
+      - realtime_search
+    cost_tier: low
+    latency_tier: fast
+    context_window: 128000
+    max_tokens_env: DOUBAO_MAX_TOKENS
+    temperature_env: DOUBAO_TEMPERATURE
+    enabled: true
+    description: "字节跳动豆包，原生搜索能力，适合信息检索任务"
+
+  # 百度文心一言 - 百度，综合能力模型
+  - name: ernie-4.0-8k
+    provider: ernie
+    api_base_env: ERNIE_API_BASE
+    api_key_env: ERNIE_API_KEY
+    model_name_env: ERNIE_MODEL
+    capabilities:
+      - chinese
+      - writing
+      - synthesis
+      - creative
+    cost_tier: mid
+    latency_tier: medium
+    context_window: 8000
+    max_tokens_env: ERNIE_MAX_TOKENS
+    temperature_env: ERNIE_TEMPERATURE
+    enabled: true
+    description: "百度文心一言，综合能力强，适合写作和创意任务"
+
+  # 阿里通义千问 - 阿里云，强写作模型
+  - name: qwen-max
+    provider: qwen
+    api_base_env: QWEN_API_BASE
+    api_key_env: QWEN_API_KEY
+    model_name_env: QWEN_MODEL
+    capabilities:
+      - chinese
+      - writing
+      - synthesis
+      - strong_reasoning
+      - critique
+    cost_tier: high
+    latency_tier: medium
+    context_window: 32000
+    max_tokens_env: QWEN_MAX_TOKENS
+    temperature_env: QWEN_TEMPERATURE
+    enabled: true
+    description: "阿里通义千问，强写作和推理能力，适合最终报告生成"
+
+# 能力标签定义
+capability_definitions:
+  chinese: "优秀的中文理解和生成能力"
+  long_context: "支持长上下文（8k+ tokens）"
+  very_long_context: "支持超长上下文（128k+ tokens）"
+  reasoning: "逻辑推理能力"
+  strong_reasoning: "强逻辑推理能力，适合复杂分析"
+  writing: "优秀的写作能力"
+  synthesis: "信息综合和总结能力"
+  critique: "批判性思维和审稿能力"
+  planning: "任务规划和拆解能力"
+  analysis: "数据分析能力"
+  extraction: "信息抽取能力"
+  summarization: "摘要生成能力"
+  web_search_native: "原生网络搜索能力"
+  multimodal: "多模态理解能力"
+  realtime_search: "实时搜索能力"
+  code: "代码理解和生成能力"
+  creative: "创意生成能力"
+
+# 成本层级定义
+cost_tier_definitions:
+  low: "低成本，适合大规模使用"
+  mid: "中等成本，平衡性能与价格"
+  high: "高成本，高性能任务使用"
+
+# 延迟层级定义
+latency_tier_definitions:
+  fast: "快速响应，适合实时任务"
+  medium: "中等延迟，适合一般任务"
+  slow: "较高延迟，适合非实时任务"

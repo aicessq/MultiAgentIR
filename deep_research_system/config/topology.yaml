@@ -1,0 +1,201 @@
+# 拓扑配置
+# 定义研究任务的路由规则和执行流程
+
+# 默认拓扑
+default_topology: "hierarchical"
+
+# 任务类型到拓扑的路由规则
+routing_rules:
+  # 行业报告 - 使用层级拓扑
+  industry_report:
+    topology: "hierarchical"
+    writer_template: "writer/industry_report.zh.j2"
+    description: "行业研究报告，有明确结构和事实依赖"
+    keywords:
+      - "行业"
+      - "市场"
+      - "趋势"
+      - "竞品"
+      - "分析报告"
+      - "发展报告"
+
+  # 公司分析 - 使用层级拓扑
+  company_analysis:
+    topology: "hierarchical"
+    writer_template: "writer/industry_report.zh.j2"
+    description: "公司/产品/市场分析"
+    keywords:
+      - "公司"
+      - "财报"
+      - "产品线"
+      - "增长"
+      - "竞争格局"
+      - "商业模式"
+
+  # 技术调研 - 使用层级拓扑
+  technical_research:
+    topology: "hierarchical"
+    writer_template: "writer/industry_report.zh.j2"
+    description: "技术路线、框架对比、落地现状研究"
+    keywords:
+      - "技术"
+      - "框架"
+      - "路线"
+      - "对比"
+      - "落地"
+      - "现状"
+
+  # 开放性问题 - 使用辩论拓扑
+  open_question:
+    topology: "debate"
+    writer_template: "writer/open_research_memo.zh.j2"
+    description: "开放性问题研究，无标准答案"
+    keywords:
+      - "是否"
+      - "应该"
+      - "哪种更好"
+      - "利弊"
+      - "可行性"
+      - "建议"
+
+  # 策略建议 - 使用辩论拓扑
+  strategy_decision:
+    topology: "debate"
+    writer_template: "writer/open_research_memo.zh.j2"
+    description: "策略选择、路线选择、优先级决策"
+    keywords:
+      - "策略"
+      - "选择"
+      - "路线"
+      - "优先级"
+      - "决策"
+      - "方案"
+
+  # 高争议问题 - 使用辩论拓扑
+  controversial_topic:
+    topology: "debate"
+    writer_template: "writer/open_research_memo.zh.j2"
+    description: "争议性观点分析，需要多角度审视"
+    keywords:
+      - "争议"
+      - "反方观点"
+      - "风险"
+      - "伦理"
+      - "监管"
+      - "对立"
+
+  # 通用问题 - 默认使用层级拓扑
+  general:
+    topology: "hierarchical"
+    writer_template: "writer/industry_report.zh.j2"
+    description: "通用研究任务"
+    keywords: []
+
+# 层级拓扑配置
+hierarchical:
+  name: "hierarchical"
+  description: "层级式拓扑，适合行业报告等结构化研究任务"
+  flow: "planner → searcher(并发) → reader(并发) → analyzer → critic → writer → validator"
+  
+  # 执行参数
+  max_sub_questions: 6
+  max_sources_per_sub_question: 5
+  allow_critic_research_loop: true
+  max_research_loops: 1
+  
+  # 并发控制
+  max_concurrent_searchers: 3
+  max_concurrent_readers: 3
+  searcher_timeout_seconds: 30
+  reader_timeout_seconds: 45
+  
+  # 质量控制
+  min_sources_per_sub_question: 2
+  min_evidence_per_source: 1
+  require_citations: true
+  
+  # 输出配置
+  default_report_sections:
+    - "执行摘要"
+    - "行业定义与研究范围"
+    - "市场背景与核心驱动力"
+    - "技术路线与产品形态"
+    - "产业链与关键参与者"
+    - "代表性公司/产品分析"
+    - "商业模式与成本结构"
+    - "竞争格局"
+    - "风险与不确定性"
+    - "未来趋势与结论"
+    - "参考来源"
+
+# 辩论拓扑配置
+debate:
+  name: "debate"
+  description: "辩论式拓扑，适合开放性问题等争议性研究任务"
+  flow: "planner → pro/con/neutral(并发) → critic → synthesizer → writer → validator"
+  
+  # 分支配置
+  branches:
+    - name: "pro"
+      agent: "pro_agent"
+      description: "正方观点研究"
+      perspective: "支持方角度"
+    
+    - name: "con"
+      agent: "con_agent"
+      description: "反方观点研究"
+      perspective: "反对方角度"
+    
+    - name: "neutral"
+      agent: "neutral_agent"
+      description: "中立视角研究"
+      perspective: "中立角度"
+  
+  # 执行参数
+  max_rounds: 1
+  require_disagreement_summary: true
+  min_arguments_per_position: 2
+  max_arguments_per_position: 5
+  
+  # 并发控制
+  max_concurrent_branches: 3
+  branch_timeout_seconds: 45
+  
+  # 质量控制
+  require_cross_examination: true
+  min_critiques_per_position: 1
+  require_conditional_conclusion: true
+  
+  # 输出配置
+  default_memo_structure:
+    - "问题定义"
+    - "结论先行：在什么条件下成立"
+    - "支持方观点与证据"
+    - "反对方观点与证据"
+    - "中立事实与约束条件"
+    - "关键分歧点"
+    - "风险、反例与不确定性"
+    - "最终建议"
+    - "参考来源"
+
+# 拓扑执行器配置
+executor:
+  # 通用执行参数
+  max_total_timeout_seconds: 600  # 10分钟总超时
+  max_retries_per_agent: 3
+  default_retry_delay_seconds: 2
+  
+  # 状态管理
+  state_persistence_interval_seconds: 5
+  max_state_size_bytes: 1048576  # 1MB
+  
+  # 监控配置
+  enable_progress_tracking: true
+  progress_update_interval_seconds: 2
+  enable_cost_tracking: true
+  enable_latency_tracking: true
+  
+  # 错误处理
+  continue_on_agent_failure: false
+  max_consecutive_failures: 3
+  fallback_topology: "hierarchical"

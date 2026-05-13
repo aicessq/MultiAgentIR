@@ -1,0 +1,224 @@
+# Agent 配置
+# 定义各个研究角色的能力需求和 Prompt 模板
+
+agents:
+  # Planner - 任务规划 Agent
+  planner:
+    name: "planner"
+    description: "研究任务规划器，负责拆解问题、生成研究计划"
+    required_capabilities:
+      - strong_reasoning
+      - planning
+      - chinese
+    preferred_capabilities:
+      - analysis
+    preferred_cost_tier: "mid"  # 使用中等成本模型，如 GLM-4
+    prompt_template: "planner/v1_basic.zh.j2"
+    output_schema: "PlannerOutput"
+    max_retries: 3
+    timeout_seconds: 60
+
+  # Searcher - 搜索 Agent
+  searcher:
+    name: "searcher"
+    description: "信息检索 Agent，负责查询改写、网页搜索、资料收集"
+    required_capabilities:
+      - web_search_native
+      - chinese
+    preferred_capabilities:
+      - realtime_search
+      - multimodal
+    preferred_cost_tier: "low"  # 使用低成本模型，如豆包
+    prompt_template: "searcher/v1_basic.zh.j2"
+    output_schema: "SearcherOutput"
+    max_retries: 2
+    timeout_seconds: 30
+    max_sources_per_query: 10
+
+  # Reader - 阅读 Agent
+  reader:
+    name: "reader"
+    description: "文档阅读 Agent，负责阅读资料、摘要、抽取引用"
+    required_capabilities:
+      - very_long_context
+      - extraction
+      - chinese
+    preferred_capabilities:
+      - summarization
+      - analysis
+    preferred_cost_tier: "low"  # 使用低成本模型，如 Kimi
+    prompt_template: "reader/v1_extraction.zh.j2"
+    output_schema: "ReaderOutput"
+    max_retries: 2
+    timeout_seconds: 45
+    min_evidence_per_source: 1
+    max_evidence_per_source: 5
+
+  # Analyzer - 分析 Agent
+  analyzer:
+    name: "analyzer"
+    description: "跨信源分析 Agent，负责综合分析、趋势分析、矛盾识别"
+    required_capabilities:
+      - strong_reasoning
+      - analysis
+      - chinese
+    preferred_capabilities:
+      - synthesis
+      - critique
+    preferred_cost_tier: "mid"  # 使用中等成本模型，如 GLM-4
+    prompt_template: "analyzer/v1_cross_source.zh.j2"
+    output_schema: "AnalyzerOutput"
+    max_retries: 2
+    timeout_seconds: 60
+
+  # Critic - 审稿 Agent
+  critic:
+    name: "critic"
+    description: "批判性审稿 Agent，负责检查事实、逻辑、引用与遗漏"
+    required_capabilities:
+      - strong_reasoning
+      - critique
+      - chinese
+    preferred_capabilities:
+      - analysis
+      - planning
+    preferred_cost_tier: "high"  # 使用高成本模型，如通义千问
+    prompt_template: "critic/v1_red_team.zh.j2"
+    output_schema: "CriticOutput"
+    max_retries: 2
+    timeout_seconds: 60
+    allow_research_loop: true
+    max_research_loops: 1
+
+  # Writer - 写作 Agent
+  writer:
+    name: "writer"
+    description: "报告写作 Agent，负责生成最终研究报告"
+    required_capabilities:
+      - writing
+      - synthesis
+      - chinese
+    preferred_capabilities:
+      - strong_reasoning
+      - creative
+    preferred_cost_tier: "high"  # 使用高成本模型，如通义千问
+    prompt_template: "writer/industry_report.zh.j2"
+    output_schema: "WriterOutput"
+    max_retries: 2
+    timeout_seconds: 90
+    default_template: "industry_report"
+
+  # Validator - 校验 Agent
+  validator:
+    name: "validator"
+    description: "输出校验 Agent，负责 Schema 校验、引用校验、格式校验"
+    required_capabilities:
+      - extraction
+      - analysis
+      - chinese
+    preferred_capabilities:
+      - reasoning
+    preferred_cost_tier: "low"  # 使用低成本模型，如 DeepSeek
+    prompt_template: "validator/v1_basic.zh.j2"
+    output_schema: "ValidatorOutput"
+    max_retries: 1
+    timeout_seconds: 30
+
+  # Debate Agents - 辩论拓扑专用
+  pro_agent:
+    name: "pro_agent"
+    description: "正方观点研究 Agent，从支持方角度收集证据并形成论证"
+    required_capabilities:
+      - reasoning
+      - web_search_native
+      - chinese
+    preferred_capabilities:
+      - analysis
+      - writing
+    preferred_cost_tier: "mid"
+    prompt_template: "debate/pro_position.zh.j2"
+    output_schema: "DebatePositionOutput"
+    max_retries: 2
+    timeout_seconds: 45
+
+  con_agent:
+    name: "con_agent"
+    description: "反方观点研究 Agent，从反对方角度收集证据并形成论证"
+    required_capabilities:
+      - reasoning
+      - web_search_native
+      - chinese
+    preferred_capabilities:
+      - analysis
+      - critique
+    preferred_cost_tier: "mid"
+    prompt_template: "debate/con_position.zh.j2"
+    output_schema: "DebatePositionOutput"
+    max_retries: 2
+    timeout_seconds: 45
+
+  neutral_agent:
+    name: "neutral_agent"
+    description: "中立视角研究 Agent，从中立角度整理事实边界、适用条件和不确定性"
+    required_capabilities:
+      - reasoning
+      - very_long_context
+      - chinese
+    preferred_capabilities:
+      - analysis
+      - synthesis
+    preferred_cost_tier: "mid"
+    prompt_template: "debate/neutral_position.zh.j2"
+    output_schema: "DebatePositionOutput"
+    max_retries: 2
+    timeout_seconds: 45
+
+  synthesizer:
+    name: "synthesizer"
+    description: "综合 Agent，整合辩论分歧，输出条件化结论"
+    required_capabilities:
+      - strong_reasoning
+      - synthesis
+      - chinese
+    preferred_capabilities:
+      - critique
+      - writing
+    preferred_cost_tier: "high"
+    prompt_template: "debate/synthesizer.zh.j2"
+    output_schema: "SynthesizerOutput"
+    max_retries: 2
+    timeout_seconds: 60
+
+# Agent 分组
+agent_groups:
+  hierarchical_core:
+    - planner
+    - searcher
+    - reader
+    - analyzer
+    - critic
+    - writer
+    - validator
+
+  debate_core:
+    - planner
+    - pro_agent
+    - con_agent
+    - neutral_agent
+    - critic
+    - synthesizer
+    - writer
+    - validator
+
+  all_agents:
+    - planner
+    - searcher
+    - reader
+    - analyzer
+    - critic
+    - writer
+    - validator
+    - pro_agent
+    - con_agent
+    - neutral_agent
+    - synthesizer
