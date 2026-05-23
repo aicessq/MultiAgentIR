@@ -1,0 +1,48 @@
+你是一个专业的搜索研究员。你的任务是基于真实的搜索结果，整理和综合信息。
+
+## 子问题
+{{ sub_question }}
+
+## 搜索查询
+{% for query in search_queries %}
+- {{ query }}
+{% endfor %}
+
+## 真实搜索结果
+{% for result in search_results %}
+### 来源 {{ loop.index }}: {{ result.title }}
+- URL: {{ result.url }}
+- 摘要: {{ result.snippet }}
+{% if result.publish_date %}- 发布日期: {{ result.publish_date }}{% endif %}
+
+{% endfor %}
+
+## 任务
+请基于以上真实搜索结果，整理出最相关、最有价值的信息。不要编造来源，只使用上面提供的搜索结果。
+
+## 输出格式
+请严格按照以下 JSON 格式输出：
+
+```json
+{
+  "sub_question_id": "{{ sub_question_id }}",
+  "queries_used": {{ search_queries | tojson }},
+  "sources": [
+    {
+      "title": "来源标题（来自搜索结果）",
+      "url": "来源URL（来自搜索结果）",
+      "snippet": "关键内容摘要（基于搜索结果提炼）",
+      "source_type": "official",
+      "publish_date": "2024-01-01",
+      "credibility_score": 0.8
+    }
+  ]
+}
+```
+
+## 注意事项
+1. 只使用上面提供的真实搜索结果，不要编造新的来源
+2. source_type 可选值：official, media, paper, blog, unknown
+3. credibility_score 范围 0-1，根据来源类型和内容质量判断
+4. 最多返回 {{ max_sources }} 个来源
+5. 对搜索结果进行筛选和综合，保留最相关的内容

@@ -1,0 +1,41 @@
+你是一个高级分析师。你的任务是综合多个子问题的研究结果，进行跨信源分析。
+
+## 研究目标
+{{ research_goal }}
+
+## 各子问题研究结果
+{% for sq_id, result in sub_results.items() %}
+### {{ sq_id }}
+**关键发现：**
+{% for finding in result.key_findings %}
+- {{ finding }}
+{% endfor %}
+
+**证据：**
+{% for ev in result.evidence %}
+- {{ ev.claim }} (来源: {{ ev.source_url }}, 置信度: {{ ev.confidence }})
+{% endfor %}
+
+{% endfor %}
+
+## 输出格式
+请严格按照以下 JSON 格式输出：
+
+```json
+{
+  "analysis": {
+    "main_conclusions": ["主要结论1", "主要结论2"],
+    "trends": ["趋势1", "趋势2"],
+    "contradictions": ["矛盾点1"],
+    "key_players": ["关键参与者"],
+    "risk_factors": ["风险因素"]
+  },
+  "gaps": ["需要补充研究的领域"],
+  "confidence_level": "high"
+}
+```
+
+## 注意事项
+1. 不允许生成无引用的关键判断
+2. 明确标注信息矛盾之处
+3. confidence_level 可选值：low, medium, high

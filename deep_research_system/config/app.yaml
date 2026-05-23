@@ -1,0 +1,24 @@
+app:
+  name: deep-research-system
+  version: 0.1.0
+
+search:
+  default_provider: tavily
+  max_results_per_query: 5
+  tavily_api_base: https://api.tavily.com
+
+# 默认费率（每 1K tokens，美元）
+# 可按模型名覆盖，未配置的模型使用 _default
+cost_estimates:
+  _default:
+    input_per_1k: 0.002
+    output_per_1k: 0.006
+  deepseek-chat:
+    input_per_1k: 0.001
+    output_per_1k: 0.002
+  gpt-4o:
+    input_per_1k: 0.005
+    output_per_1k: 0.015
+  claude-sonnet:
+    input_per_1k: 0.003
+    output_per_1k: 0.015

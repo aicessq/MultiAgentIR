@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --el-bg-color: #0a0e1a;
+  --el-bg-color-overlay: #0f1429;
+  --el-bg-color-page: #060a14;
+  --el-text-color-primary: #e0f0f0;
+  --el-text-color-regular: #b0c0c0;
+  --el-text-color-secondary: #708090;
+  --el-color-primary: #00f0ff;
+  --el-color-primary-light-3: #33f3ff;
+  --el-color-primary-light-5: #66f6ff;
+  --el-color-primary-light-7: #99f9ff;
+  --el-color-primary-light-9: #ccfcff;
+  --el-color-primary-dark-2: #00c0cc;
+  --el-color-success: #00ff88;
+  --el-color-warning: #ffaa00;
+  --el-color-danger: #ff3366;
+  --el-color-info: #a855f7;
+  --el-border-color: #1a2a4a;
+  --el-border-color-light: #152040;
+  --el-border-color-lighter: #101830;
+  --el-fill-color-blank: #0f1429;
+  --el-fill-color: #141a30;
+  --el-fill-color-light: #1a2040;
+  --el-fill-color-lighter: #1f2848;
+  --el-mask-color: rgba(6, 10, 20, 0.8);
+  --el-font-family: 'Inter', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #060a14;
+  color: #e0f0f0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Element Plus overrides for sci-fi */
+.el-input__wrapper,
+.el-textarea__inner {
+  background: #0a0e1a !important;
+  border-color: #1a2a4a !important;
+  box-shadow: none !important;
+  color: #e0f0f0 !important;
+}
+.el-input__wrapper:focus-within,
+.el-textarea__inner:focus {
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2) !important;
+}
+
+.el-button--primary {
+  background: linear-gradient(135deg, #00c0cc, #00f0ff) !important;
+  border: none !important;
+  color: #0a0e1a !important;
+  font-weight: 600;
+}
+.el-button--primary:hover {
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4) !important;
+}
+
+.el-card {
+  background: #0f1429 !important;
+  border: 1px solid #1a2a4a !important;
+  border-radius: 12px !important;
+}
+
+.el-select__wrapper {
+  background: #0a0e1a !important;
+  border-color: #1a2a4a !important;
+  box-shadow: none !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0e1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a2a4a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3a5a;
+}
+
+/* Vue Flow dark theme */
+.vue-flow {
+  background: #060a14 !important;
+}
+.vue-flow__edge-path {
+  stroke: #1a2a4a;
+  stroke-width: 2;
+}
+.vue-flow__edge.animated .vue-flow__edge-path {
+  stroke: #00f0ff;
+  stroke-dasharray: 5;
+  animation: dash-flow 1s linear infinite;
+}
+@keyframes dash-flow {
+  to { stroke-dashoffset: -10; }
+}
+
+/* Glow effect for active nodes */
+.node-active {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(0, 240, 255, 0.6); }
+}
