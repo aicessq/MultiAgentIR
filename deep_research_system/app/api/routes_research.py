@@ -6,7 +6,8 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from app.core.errors import TaskNotFoundError, success_response
+from app.core.errors import TaskNotFoundError
+from app.schemas.response import success_response
 from app.schemas.task import ResearchRequest
 from app.services.research_service import ResearchService
 
@@ -24,9 +25,8 @@ async def get_service() -> ResearchService:
 
 
 @router.post("/research")
-async def create_research(request: ResearchRequest) -> dict:
+async def create_research(request: ResearchRequest):
     service = await get_service()
-    # Convert query to user_query for TaskSpec
     data = request.model_dump()
     data["user_query"] = data.pop("query", "")
     task = await service.create_task(data)
@@ -34,9 +34,8 @@ async def create_research(request: ResearchRequest) -> dict:
 
 
 @router.post("/research/sync")
-async def create_research_sync(request: ResearchRequest) -> dict:
+async def create_research_sync(request: ResearchRequest):
     service = await get_service()
-    # Convert query to user_query for TaskSpec
     data = request.model_dump()
     data["user_query"] = data.pop("query", "")
     task = await service.create_task_sync(data)
@@ -44,7 +43,7 @@ async def create_research_sync(request: ResearchRequest) -> dict:
 
 
 @router.get("/research/{task_id}")
-async def get_research(task_id: str) -> dict:
+async def get_research(task_id: str):
     service = await get_service()
     task = service.get_task(task_id)
     if not task:
@@ -53,7 +52,7 @@ async def get_research(task_id: str) -> dict:
 
 
 @router.post("/research/{task_id}/cancel")
-async def cancel_research(task_id: str) -> dict:
+async def cancel_research(task_id: str):
     service = await get_service()
     success = service.cancel_task(task_id)
     if not success:

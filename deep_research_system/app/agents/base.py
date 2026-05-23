@@ -154,6 +154,15 @@ class BaseAgent:
     def _system_prompt(self) -> str:
         return ""
 
+    def _handle_insufficient_evidence(self, parsed: dict, state: ResearchState) -> dict:
+        if parsed.get("insufficient_evidence"):
+            state.errors.append({
+                "stage": self.name,
+                "type": "insufficient_evidence",
+                "details": parsed.get("insufficient_evidence_reason", "unknown"),
+            })
+        return parsed
+
     def _parse_output(self, content: str) -> dict:
         try:
             start = content.find("{")

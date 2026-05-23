@@ -73,7 +73,8 @@ def formatter(record: Dict[str, Any]) -> str:
     返回 JSON 格式的日志
     """
     record["extra"]["serialized"] = serialize_record(record)
-    return json.dumps(record["extra"]["serialized"], ensure_ascii=False)
+    # Return pre-formatted message; loguru won't re-interpret braces
+    return record["extra"]["serialized"]["message"] + "\n"
 
 
 def setup_logging() -> None:
@@ -82,44 +83,31 @@ def setup_logging() -> None:
     """
     # 移除默认的 loguru 处理器
     logger.remove()
-    
-    # 添加控制台输出（JSON 格式）
+
+    # 添加控制台输出
     logger.add(
         sys.stdout,
-        format=formatter,
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
         level=settings.LOG_LEVEL.upper(),
-        serialize=False,  # 我们自己在 formatter 中序列化
-        colorize=False,   # JSON 格式不需要颜色
+        colorize=True,
         backtrace=True,
         diagnose=True,
     )
-    
-    # 添加文件输出（可选）
-    if settings.ENVIRONMENT == "production":
-        logger.add(
-            "logs/app_{time:YYYY-MM-DD}.log",
-            rotation="00:00",  # 每天轮转
-            retention="30 days",  # 保留30天
-            compression="zip",
-            format=formatter,
-            level="INFO",
-            serialize=False,
-        )
-    
+
     # 拦截标准 logging 模块
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
-    
+
     # 设置第三方库的日志级别
     for logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"]:
         logging_logger = logging.getLogger(logger_name)
         logging_logger.handlers = [InterceptHandler()]
         logging_logger.propagate = False
-    
+
     # 设置根日志记录器
     root_logger = logging.getLogger()
     root_logger.handlers = [InterceptHandler()]
-    
-    logger.info("日志系统初始化完成", extra={"environment": settings.ENVIRONMENT})
+
+    logger.info("日志系统初始化完成")
 
 
 def get_logger(name: Optional[str] = None) -> logger:

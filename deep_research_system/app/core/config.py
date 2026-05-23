@@ -3,9 +3,16 @@
 基于 pydantic-settings 的环境变量配置管理
 """
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).parent.parent.parent
+
+# Populate os.environ from .env so os.getenv() calls throughout the codebase work
+load_dotenv(BASE_DIR / ".env", override=False)
 
 
 class Settings(BaseSettings):
@@ -223,3 +230,84 @@ class Settings(BaseSettings):
 
 # 全局配置实例
 settings = Settings()
+
+
+class AppConfig:
+    """应用配置容器，整合 Settings 和 YAML 配置文件"""
+
+    def __init__(self) -> None:
+        self.settings = settings
+        self.app: Dict[str, Any] = {}
+        self.topology: Dict[str, Any] = {}
+        self.models: Dict[str, Any] = {}
+        self.agents: Dict[str, Any] = {}
+        self._load_yaml_configs()
+
+    def _load_yaml_configs(self) -> None:
+        import os
+        import yaml
+        config_dir = BASE_DIR / "config"
+        for name, attr in [("app.yaml", "app"), ("topology.yaml", "topology"),
+                           ("models.yaml", "models"), ("agents.yaml", "agents")]:
+            path = config_dir / name
+            if path.exists():
+                with open(path, encoding="utf-8") as f:
+                    data = yaml.safe_load(f) or {}
+                setattr(self, attr, data)
+
+    def get_effective_models(self) -> list[dict]:
+        """返回模型列表，将 env 变量名解析为实际值。"""
+        import os
+        raw = self.models.get("models", [])
+        result = []
+        for entry in raw:
+            m = dict(entry)
+            # Resolve env vars to actual values, falling back to Settings defaults
+            if "api_base_env" in m:
+                env_name = m.pop("api_base_env")
+                val = os.getenv(env_name, "") or getattr(self.settings, env_name, "")
+                m["api_base"] = val
+            if "api_key_env" in m:
+                env_name = m.pop("api_key_env")
+                val = os.getenv(env_name, "") or getattr(self.settings, env_name, "") or ""
+                m["api_key"] = val
+            if "model_name_env" in m:
+                env_name = m.pop("model_name_env")
+                val = os.getenv(env_name, "") or getattr(self.settings, env_name, "") or m.get("name", "")
+                m["model_name"] = val
+            if "max_tokens_env" in m:
+                env_name = m.pop("max_tokens_env")
+                val = os.getenv(env_name, "") or str(getattr(self.settings, env_name, "8192"))
+                m["max_tokens"] = int(val)
+            if "temperature_env" in m:
+                env_name = m.pop("temperature_env")
+                val = os.getenv(env_name, "") or str(getattr(self.settings, env_name, "0.7"))
+                m["temperature"] = float(val)
+            result.append(m)
+        return result
+
+    def get_effective_api_keys(self) -> dict[str, list[dict]]:
+        """返回 {model_name: [{"key_id": ..., "env_name": ..., "weight": 1}]} """
+        raw = self.models.get("models", [])
+        result: dict[str, list[dict]] = {}
+        for entry in raw:
+            name = entry.get("name", "")
+            env_name = entry.get("api_key_env", "")
+            if name and env_name:
+                result[name] = [{"key_id": f"{name}_key", "env_name": env_name, "weight": 1}]
+        return result
+
+
+_config: AppConfig | None = None
+
+
+def get_config() -> AppConfig:
+    global _config
+    if _config is None:
+        _config = AppConfig()
+    return _config
+
+
+def reset_config() -> None:
+    global _config
+    _config = None

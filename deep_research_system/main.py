@@ -77,7 +77,7 @@ def create_application() -> FastAPI:
     setup_middlewares(app)
     
     # 添加 API 路由
-    app.include_router(api_router, prefix=settings.API_V1_STR)
+    app.include_router(api_router, prefix="/api")
     
     return app
 

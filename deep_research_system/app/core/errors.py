@@ -221,7 +221,7 @@ class TopologyError(BaseAppError):
     """
     拓扑执行错误
     """
-    
+
     def __init__(
         self,
         message: str = "拓扑执行失败",
@@ -232,6 +232,24 @@ class TopologyError(BaseAppError):
             code="TOPOLOGY_ERROR",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             details=details,
+        )
+
+
+class TaskNotFoundError(BaseAppError):
+    """
+    任务未找到错误
+    """
+
+    def __init__(
+        self,
+        task_id: str,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            message=f"任务未找到: {task_id}",
+            code="TASK_NOT_FOUND",
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=details or {"task_id": task_id},
         )
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import time
 from typing import Any
@@ -8,7 +9,6 @@ from typing import Any
 from app.core.config import get_config
 from app.schemas.state import ResearchState
 from app.schemas.task import TaskSpec
-from app.services.cache_service import CacheService
 from app.services.trace_service import TraceService
 from app.topology.debate import DebateTopology
 from app.topology.hierarchical import HierarchicalTopology
@@ -21,9 +21,8 @@ logger = logging.getLogger(__name__)
 
 class ResearchService:
     def __init__(self) -> None:
-        config = get_config()
         self.topology_router = TopologyRouter()
-        self.cache = CacheService(config.settings.redis_url)
+        self._cache: dict[str, Any] = {}  # simple in-memory cache
         self.trace = TraceService()
         self._tasks: dict[str, dict] = {}
         self._subscribers: dict[str, list[asyncio.Queue]] = {}
@@ -32,7 +31,7 @@ class ResearchService:
         self._debate = DebateTopology()
 
     async def initialize(self) -> None:
-        await self.cache.connect()
+        pass
 
     def subscribe(self, task_id: str) -> asyncio.Queue:
         if task_id not in self._subscribers:
@@ -68,14 +67,14 @@ class ResearchService:
             "result": None,
         }
 
-        task_handle = asyncio.create_task(self._execute(task, topology_name))
+        task_handle = asyncio.create_task(self._execute(task, topology_name, writer_template))
         self._running[task_id] = task_handle
         return self._tasks[task_id]
 
     async def create_task_sync(self, request: dict) -> dict:
         task_id = generate_id("task")
         task = TaskSpec(task_id=task_id, **request)
-        topology_name, _ = self.topology_router.route(task.task_type)
+        topology_name, writer_template = self.topology_router.route(task.task_type)
 
         self._tasks[task_id] = {
             "task_id": task_id,
@@ -87,12 +86,12 @@ class ResearchService:
             "result": None,
         }
 
-        result = await self._execute(task, topology_name)
+        result = await self._execute(task, topology_name, writer_template)
         return self._tasks[task_id]
 
-    async def _execute(self, task: TaskSpec, topology_name: str) -> dict:
+    async def _execute(self, task: TaskSpec, topology_name: str, writer_template: str = "writer/industry_report.zh.j2") -> dict:
         task_id = task.task_id
-        state = ResearchState(task=task, selected_topology=topology_name)
+        state = ResearchState(task=task, selected_topology=topology_name, writer_template=writer_template)
         start_time = time.perf_counter()
 
         def on_topology_event(event: dict) -> None:
@@ -105,8 +104,8 @@ class ResearchService:
                 self._tasks[task_id]["current_stage"] = event["agent"]
 
         try:
-            cache_key = CacheService.hash_query(task.user_query)
-            cached = await self.cache.get(cache_key)
+            cache_key = hashlib.md5(task.user_query.encode()).hexdigest()
+            cached = self._cache.get(cache_key)
             if cached:
                 logger.info(f"Cache hit for task {task_id}")
                 self._tasks[task_id].update({"status": "completed", "progress": 100, "result": cached})
@@ -134,7 +133,7 @@ class ResearchService:
                 "audit_trail": state.audit_trail,
             }
 
-            await self.cache.set(cache_key, result)
+            self._cache[cache_key] = result
             self.trace.record(task_id, state)
 
             self._tasks[task_id].update({

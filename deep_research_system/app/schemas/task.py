@@ -24,6 +24,7 @@ class TaskSpec(BaseModel):
 
 
 class TaskRequirement(BaseModel):
+    model_slot: str | None = None  # "search" | "analysis" | "reasoning" | "writing"
     required_capabilities: list[str] = Field(default_factory=list)
     preferred_capabilities: list[str] = Field(default_factory=list)
     preferred_cost_tier: Literal["low", "mid", "high"] = "low"

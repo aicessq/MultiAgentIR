@@ -69,6 +69,11 @@ class HierarchicalTopology(BaseTopology):
                 state.errors.append({"stage": "searcher", "sq_id": sq.get("id"), "error": str(result)})
             else:
                 state.sub_results[sq["id"]] = result
+                # Register sources into source_registry
+                for source in result.get("sources", []):
+                    url = source.get("url", "")
+                    if url:
+                        state.source_registry[url] = source
                 self.emit(on_event, {
                     "type": "subtask_complete",
                     "agent": "searcher",
@@ -112,6 +117,19 @@ class HierarchicalTopology(BaseTopology):
         logger.info("Stage: Analyzer")
         analysis = await self.analyzer.run(state, on_event=on_event)
         state.analyses.append(analysis)
+        # Store claim graph and build claim audit trail
+        if isinstance(analysis, dict):
+            state.claim_graph = analysis.get("claims", [])
+            for claim in state.claim_graph:
+                state.claim_audit.append({
+                    "claim_id": claim.get("claim_id", ""),
+                    "claim_text": claim.get("claim_text", ""),
+                    "evidence_ids": claim.get("evidence_ids", []),
+                    "analyzer_confidence": claim.get("confidence", 0.5),
+                    "critic_findings": [],
+                    "writer_sections_used": [],
+                    "validator_status": "unverified",
+                })
         self.emit(on_event, {"type": "stage_complete", "agent": "analyzer", "progress": 65, "output": analysis})
 
         # Step 5: Critic
@@ -121,10 +139,70 @@ class HierarchicalTopology(BaseTopology):
         logger.info("Stage: Critic")
         critique = await self.critic.run(state, on_event=on_event)
         state.critiques.append(critique)
+        # Attach critic findings to claim audit
+        if isinstance(critique, dict):
+            for finding in critique.get("findings", []):
+                target_id = finding.get("target_id", "")
+                for audit_entry in state.claim_audit:
+                    if audit_entry["claim_id"] == target_id:
+                        audit_entry["critic_findings"].append(finding)
         self.emit(on_event, {"type": "stage_complete", "agent": "critic", "progress": 80, "output": critique})
 
-        if critique.get("needs_more_research"):
-            logger.info("Critic requested supplementary research")
+        # Step 6: Critic -> Searcher loop (supplementary research)
+        from app.core.config import get_config
+        topo_cfg = get_config().topology.get("hierarchical", {})
+        max_loops = topo_cfg.get("max_research_loops", 1)
+
+        if critique.get("needs_more_research") or critique.get("overall_assessment") == "needs_research":
+            loop_count = 0
+            while loop_count < max_loops:
+                loop_count += 1
+                logger.info(f"Critic->Searcher loop {loop_count}/{max_loops}")
+                self.emit(on_event, {"type": "stage_start", "agent": "supplementary_search", "progress": 80 + loop_count})
+
+                # Extract search queries from critic findings
+                supplementary_queries = []
+                for finding in critique.get("findings", []):
+                    supplementary_queries.extend(finding.get("suggested_search_queries", []))
+
+                if not supplementary_queries:
+                    logger.info("No supplementary queries from critic, breaking loop")
+                    break
+
+                # Run supplementary search
+                supp_sq = {
+                    "id": f"supp_{loop_count}",
+                    "question": "补充研究：" + "；".join(supplementary_queries[:3]),
+                    "search_queries": supplementary_queries[:3],
+                    "priority": 1,
+                }
+                supp_state = state.model_copy(deep=True)
+                supp_state.plan = [supp_sq]
+                searcher = self.searcher_cls()
+                supp_result = await searcher.run(supp_state, on_event=on_event)
+
+                if not isinstance(supp_result, Exception):
+                    state.sub_results[f"supp_{loop_count}"] = supp_result
+                    for source in supp_result.get("sources", []):
+                        url = source.get("url", "")
+                        if url:
+                            state.source_registry[url] = source
+
+                # Re-run analyzer with expanded evidence
+                analysis = await self.analyzer.run(state, on_event=on_event)
+                state.analyses.append(analysis)
+                if isinstance(analysis, dict):
+                    state.claim_graph = analysis.get("claims", [])
+
+                # Re-run critic
+                critique = await self.critic.run(state, on_event=on_event)
+                state.critiques.append(critique)
+
+                self.emit(on_event, {"type": "stage_complete", "agent": "supplementary_search", "progress": 82 + loop_count})
+
+                if not critique.get("needs_more_research"):
+                    logger.info("Critic satisfied after supplementary research")
+                    break
 
         # Step 7: Writer
         state.current_stage = "writer"

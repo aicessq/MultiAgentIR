@@ -38,3 +38,11 @@ class ModelRegistry:
             if all(cap in m.capabilities for cap in capabilities):
                 result.append(m)
         return result
+
+    def get_by_env_slot(self, slot: str) -> ModelSpec | None:
+        """从 .env 的 MODEL_{SLOT}_NAME 获取模型名，在注册表中查找。"""
+        import os
+        model_name = os.getenv(f"MODEL_{slot.upper()}_NAME", "")
+        if model_name:
+            return self._models.get(model_name)
+        return None

@@ -6,6 +6,8 @@ API 路由整合模块
 from fastapi import APIRouter
 
 from app.api.routes_health import router as health_router
+from app.api.routes_research import router as research_router
+from app.api.routes_models import router as models_router
 
 # 创建主 API 路由器
 api_router = APIRouter()
@@ -13,11 +15,9 @@ api_router = APIRouter()
 # 包含健康检查路由
 api_router.include_router(health_router)
 
-# 注意：其他路由模块将在后续实现时添加
-# from app.api.routes_research import router as research_router
-# from app.api.routes_models import router as models_router
-# api_router.include_router(research_router, prefix="/research", tags=["research"])
-# api_router.include_router(models_router, prefix="/models", tags=["models"])
+# 包含研究和模型路由
+api_router.include_router(research_router, tags=["research"])
+api_router.include_router(models_router, tags=["models"])
 
 # 根端点，提供 API 基本信息
 @api_router.get("/")

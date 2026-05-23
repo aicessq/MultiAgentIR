@@ -42,7 +42,14 @@
 
 ## 注意事项
 1. 只使用上面提供的真实搜索结果，不要编造新的来源
-2. source_type 可选值：official, media, paper, blog, unknown
-3. credibility_score 范围 0-1，根据来源类型和内容质量判断
+2. source_type 可选值：official, media, paper, blog, dataset, unknown
+3. credibility_score 范围 0-1，根据以下标准评分：
+   - 1.0: 官方政府/监管机构数据、上市公司财报
+   - 0.9: 权威学术期刊、知名咨询机构报告
+   - 0.8: 主流财经媒体深度报道
+   - 0.7: 行业媒体、知名博客
+   - 0.5: 一般新闻、社交媒体
+   - 0.3: 匿名来源、未验证信息
 4. 最多返回 {{ max_sources }} 个来源
 5. 对搜索结果进行筛选和综合，保留最相关的内容
+6. 优先保留 credibility_score >= 0.7 的来源

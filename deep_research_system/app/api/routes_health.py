@@ -17,35 +17,23 @@ from app.schemas.response import HealthResponse, success_response
 router = APIRouter(prefix="/health", tags=["health"])
 
 
-@router.get("", response_model=HealthResponse)
-async def health_check() -> JSONResponse:
+@router.get("")
+async def health_check():
     """
     健康检查端点
     返回系统健康状态和依赖服务状态
     """
-    # 检查时间戳
     timestamp = datetime.utcnow().isoformat() + "Z"
-    
-    # 基础健康状态
-    status = "healthy"
-    
-    # 检查依赖服务状态（这里可以添加实际的检查逻辑）
-    dependencies: Dict[str, str] = {
-        "redis": "checking",  # 实际实现时会检查 Redis 连接
-        "models": "available",  # 实际实现时会检查模型可用性
-        "config": "loaded",
-    }
-    
-    # 构建健康响应
-    health_data = HealthResponse(
-        status=status,
-        version=settings.VERSION,
-        environment=settings.ENVIRONMENT,
-        timestamp=timestamp,
-        dependencies=dependencies,
-    )
-    
-    return success_response(data=health_data.dict())
+    return success_response(data={
+        "status": "healthy",
+        "version": settings.VERSION,
+        "environment": settings.ENVIRONMENT,
+        "timestamp": timestamp,
+        "dependencies": {
+            "models": "available",
+            "config": "loaded",
+        },
+    })
 
 
 @router.get("/ready")

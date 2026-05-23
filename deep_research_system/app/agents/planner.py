@@ -17,10 +17,11 @@ logger = logging.getLogger(__name__)
 
 class PlannerAgent(BaseAgent):
     name = "planner"
-    prompt_template_name = "planner/v2_structured.zh.j2"
+    prompt_template_name = "planner/v3_hypothesis.zh.j2"
 
     def requirement(self, state: ResearchState) -> TaskRequirement:
         return TaskRequirement(
+            model_slot="reasoning",
             required_capabilities=["strong_reasoning"],
             preferred_cost_tier="high",
             complexity="hard",

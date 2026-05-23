@@ -72,7 +72,24 @@ export const useResearchStore = defineStore('research', () => {
 
   function addEvent(event: any) {
     const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false })
+
+    // Skip stream tokens — they go through the batched token buffer instead
+    if (event.type === 'agent_stream_token') {
+      if (event.agent) {
+        if (!_tokenBuffer[event.agent]) _tokenBuffer[event.agent] = ''
+        _tokenBuffer[event.agent] += event.token
+        if (!_tokenFlushTimer) {
+          _tokenFlushTimer = setTimeout(flushTokens, 50)
+        }
+      }
+      return
+    }
+
     events.value.push({ ...event, _time: timestamp })
+    // Cap events array to prevent DOM bloat
+    if (events.value.length > 200) {
+      events.value.splice(0, events.value.length - 200)
+    }
 
     if (event.agent) {
       // Ensure agent detail exists
@@ -104,14 +121,7 @@ export const useResearchStore = defineStore('research', () => {
         detail.message = event.message
         detail.activityLog.push(`[${timestamp}] ${event.message}`)
       }
-      if (event.type === 'agent_stream_token') {
-        // Batch tokens to avoid UI freeze from rapid updates
-        if (!_tokenBuffer[event.agent]) _tokenBuffer[event.agent] = ''
-        _tokenBuffer[event.agent] += event.token
-        if (!_tokenFlushTimer) {
-          _tokenFlushTimer = setTimeout(flushTokens, 50)
-        }
-      }
+      // agent_stream_token is handled in the early return above
       if (event.type === 'subtask_complete') {
         detail.activityLog.push(`[${timestamp}] ${event.message}`)
       }

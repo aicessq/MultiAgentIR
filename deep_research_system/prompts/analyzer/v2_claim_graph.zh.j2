@@ -1,0 +1,75 @@
+你是一个高级分析师。你的任务是综合多个子问题的研究结果，构建结构化的论点图谱（Claim Graph）。
+
+## 研究目标
+{{ research_goal }}
+
+## 各子问题研究结果
+{% for sq_id, result in sub_results.items() %}
+### {{ sq_id }}
+{% if result.key_findings is defined %}
+**关键发现：**
+{% for finding in result.key_findings %}
+- {{ finding }}
+{% endfor %}
+{% endif %}
+
+{% if result.atomic_facts is defined %}
+**原子事实：**
+{% for fact in result.atomic_facts %}
+- {{ fact }}
+{% endfor %}
+{% endif %}
+
+{% if result.evidence is defined %}
+**证据：**
+{% for ev in result.evidence %}
+- evidence_id: {{ ev.evidence_id | default("未分配") }}
+  声明: {{ ev.claim }}
+  来源: {{ ev.source_url }}
+  摘要: {{ ev.quote_or_summary }}
+  置信度: {{ ev.confidence | default(0.5) }}
+  支持方向: {{ ev.supports | default("supports") }}
+{% endfor %}
+{% endif %}
+
+{% if result.uncertainties is defined and result.uncertainties %}
+**不确定性：**
+{% for u in result.uncertainties %}
+- {{ u }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+
+## 输出格式
+请严格按照以下 JSON 格式输出：
+
+```json
+{
+  "claims": [
+    {
+      "claim_id": "clm_001",
+      "claim_text": "综合多个来源得出的结论",
+      "evidence_ids": ["ev_sq1_001", "ev_sq2_003"],
+      "confidence": 0.8,
+      "caveats": ["适用范围有限", "数据来源较旧"],
+      "supporting_count": 2,
+      "contradicting_count": 0
+    }
+  ],
+  "trends": ["趋势1"],
+  "contradictions": ["不同来源的冲突点"],
+  "gaps": ["需要补充研究的领域"],
+  "confidence_level": "medium"
+}
+```
+
+## 注意事项
+1. **不要生成无 evidence_id 支撑的结论** — 每个 claim 必须引用至少一个 evidence_id
+2. claim_id 格式为 `clm_XXX`，三位数字递增
+3. confidence 范围 0-1，基于证据质量和数量综合判断
+4. supporting_count 和 contradicting_count 分别统计支持和反驳该 claim 的证据数量
+5. 明确标注信息矛盾之处，放入 contradictions
+6. confidence_level 可选值：low, medium, high
+7. 如果某个子问题的证据不足，将其未覆盖的点放入 gaps
+8. caveats 记录该结论的适用条件和限制

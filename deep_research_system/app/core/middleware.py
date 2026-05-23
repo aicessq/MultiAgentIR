@@ -124,17 +124,11 @@ class ExceptionHandlingMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
             
         except BaseAppError as exc:
-            # 处理应用自定义异常
-            logger.error(
-                f"应用异常: {exc.code} - {exc.message}",
-                extra={
-                    "request_id": getattr(request.state, "request_id", "unknown"),
-                    "exception_code": exc.code,
-                    "exception_message": exc.message,
-                    "exception_details": exc.details,
-                }
-            )
-            
+            logger.bind(
+                request_id=getattr(request.state, "request_id", "unknown"),
+                exception_code=exc.code,
+            ).error(f"应用异常: {exc.code} - {exc.message}")
+
             return JSONResponse(
                 status_code=exc.status_code,
                 content=error_response(
@@ -143,29 +137,20 @@ class ExceptionHandlingMiddleware(BaseHTTPMiddleware):
                     details=exc.details,
                 ),
             )
-            
+
         except Exception as exc:
-            # 处理未捕获的异常
             request_id = getattr(request.state, "request_id", "unknown")
-            
-            logger.error(
-                f"未捕获异常: {type(exc).__name__}: {str(exc)}",
-                extra={
-                    "request_id": request_id,
-                    "exception_type": type(exc).__name__,
-                    "exception_message": str(exc),
-                },
-                exc_info=True,
+            logger.bind(request_id=request_id).opt(exception=True).error(
+                f"未捕获异常: {type(exc).__name__}"
             )
-            
-            # 在生产环境中隐藏详细错误信息
+
             if settings.ENVIRONMENT == "production":
                 message = "服务器内部错误"
                 details = None
             else:
                 message = f"{type(exc).__name__}: {str(exc)}"
-                details = {"traceback": str(exc.__traceback__) if exc.__traceback__ else None}
-            
+                details = None
+
             return JSONResponse(
                 status_code=500,
                 content=error_response(

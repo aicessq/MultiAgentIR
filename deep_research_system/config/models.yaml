@@ -11,9 +11,12 @@ models:
       - chinese
       - long_context
       - reasoning
+      - strong_reasoning
       - writing
+      - synthesis
+      - critique
       - code
-    cost_tier: low
+    cost_tier: high
     latency_tier: medium
     context_window: 128000
     max_tokens_env: DEEPSEEK_MAX_TOKENS

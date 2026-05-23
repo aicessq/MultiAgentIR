@@ -12,10 +12,11 @@ logger = logging.getLogger(__name__)
 
 class AnalyzerAgent(BaseAgent):
     name = "analyzer"
-    prompt_template_name = "analyzer/v1_cross_source.zh.j2"
+    prompt_template_name = "analyzer/v2_claim_graph.zh.j2"
 
     def requirement(self, state: ResearchState) -> TaskRequirement:
         return TaskRequirement(
+            model_slot="analysis",
             required_capabilities=["long_context", "reasoning"],
             preferred_cost_tier="mid",
             complexity="medium",

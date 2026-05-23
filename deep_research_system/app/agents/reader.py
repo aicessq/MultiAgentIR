@@ -12,10 +12,11 @@ logger = logging.getLogger(__name__)
 
 class ReaderAgent(BaseAgent):
     name = "reader"
-    prompt_template_name = "reader/v1_extraction.zh.j2"
+    prompt_template_name = "reader/v2_atomic_facts.zh.j2"
 
     def requirement(self, state: ResearchState) -> TaskRequirement:
         return TaskRequirement(
+            model_slot="search",
             required_capabilities=["long_context", "extraction"],
             preferred_cost_tier="low",
             min_context_window=32000,
@@ -29,4 +30,5 @@ class ReaderAgent(BaseAgent):
             "sub_question": sq_info.get("question", ""),
             "sub_question_id": sq_id,
             "sources": sq_data.get("sources", []),
+            "hypothesis": sq_info.get("hypothesis", ""),
         }

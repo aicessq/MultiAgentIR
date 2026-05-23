@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from app.core.errors import success_response
+from app.schemas.response import success_response
 from app.model_pool.key_pool import APIKeyPool
 from app.model_pool.registry import ModelRegistry
 from app.services.config_service import get_config_service

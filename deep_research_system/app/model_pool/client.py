@@ -68,7 +68,18 @@ class LLMClient:
         self, model: ModelSpec, prompt: str, system_prompt: str, api_key: str,
         result_collector: StreamResult | None,
     ) -> AsyncGenerator[str, None]:
-        base_url = (model.api_base or "https://api.openai.com/v1").rstrip("/")
+        import os
+        base_url = model.api_base or ""
+        if not base_url:
+            # Try slot-based env var fallback
+            for slot in ["search", "analysis", "reasoning", "writing"]:
+                val = os.getenv(f"MODEL_{slot.upper()}_API_BASE", "")
+                if val:
+                    base_url = val
+                    break
+        if not base_url:
+            base_url = "https://api.openai.com/v1"
+        base_url = base_url.rstrip("/")
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
@@ -166,7 +177,17 @@ class LLMClient:
     async def _call_openai_compatible(
         self, model: ModelSpec, prompt: str, system_prompt: str, api_key: str,
     ) -> LLMCallResult:
-        base_url = (model.api_base or "https://api.openai.com/v1").rstrip("/")
+        import os
+        base_url = model.api_base or ""
+        if not base_url:
+            for slot in ["search", "analysis", "reasoning", "writing"]:
+                val = os.getenv(f"MODEL_{slot.upper()}_API_BASE", "")
+                if val:
+                    base_url = val
+                    break
+        if not base_url:
+            base_url = "https://api.openai.com/v1"
+        base_url = base_url.rstrip("/")
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
