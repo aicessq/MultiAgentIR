@@ -3,7 +3,9 @@
     "allow": [
       "WebSearch",
       "Bash(python -c ' *)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(npm run *)",
+      "Bash(git stash *)"
     ]
   }
 }

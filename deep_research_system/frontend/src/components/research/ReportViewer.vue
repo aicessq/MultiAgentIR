@@ -23,6 +23,11 @@ const summary = computed(() => props.report?.executive_summary || '')
     <div v-for="(section, i) in sections" :key="i" class="mb-6">
       <h3 class="text-sm font-display text-cyber-purple mb-2 tracking-wider">{{ section.heading }}</h3>
       <div class="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{{ section.content }}</div>
+      <div v-if="section.claim_ids?.length" class="mt-2 flex flex-wrap gap-1">
+        <span v-for="(cid, j) in section.claim_ids" :key="j" class="text-[10px] font-mono text-cyber-purple/80 bg-cyber-purple/10 px-2 py-0.5 rounded border border-cyber-purple/20">
+          {{ cid }}
+        </span>
+      </div>
       <div v-if="section.citations?.length" class="mt-2 flex flex-wrap gap-1">
         <span v-for="(url, j) in section.citations" :key="j" class="text-[10px] font-mono text-cyber-cyan/60 bg-cyber-cyan/5 px-2 py-0.5 rounded">
           {{ url }}

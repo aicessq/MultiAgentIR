@@ -19,6 +19,14 @@ const report = computed(() => store.currentTask?.result?.report)
 const metrics = computed(() => store.currentTask?.result?.metrics)
 const trail = computed(() => store.currentTask?.result?.audit_trail || [])
 
+// Extract debate branch IDs from node states (h_0, h_1, etc.)
+const debateBranches = computed(() => {
+  return Object.keys(store.nodeStates).filter(k => k.startsWith('h_'))
+})
+const hasSupplementarySearch = computed(() => {
+  return Object.keys(store.nodeStates).includes('supplementary_search')
+})
+
 async function handleSubmit(query: string, taskType: string, depth: string) {
   selectedAgent.value = null
   store.reset()
@@ -86,6 +94,8 @@ async function handleCancel() {
           :topology="topology"
           :node-states="store.nodeStates"
           :agent-details="store.agentDetails"
+          :debate-branches="debateBranches"
+          :has-supplementary-search="hasSupplementarySearch"
           @select-agent="handleSelectAgent"
         />
       </div>
