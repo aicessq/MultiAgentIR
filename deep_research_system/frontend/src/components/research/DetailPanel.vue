@@ -56,7 +56,7 @@ function confidenceColor(confidence: number): string {
 
 // Structured output rendering per agent type
 const isPlanner = computed(() => props.agent === 'planner')
-const isSearcher = computed(() => props.agent === 'searcher')
+const isSearcher = computed(() => props.agent === 'searcher' || props.agent === 'supplementary_search')
 const isReader = computed(() => props.agent === 'reader')
 const isAnalyzer = computed(() => props.agent === 'analyzer')
 const isCritic = computed(() => props.agent === 'critic')
@@ -153,6 +153,14 @@ const formattedOutput = computed(() => {
 
       <!-- ===== SEARCHER output ===== -->
       <div v-else-if="isSearcher && detail?.output" class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span v-if="detail.output.search_mode === 'real'" class="text-[10px] px-2 py-0.5 rounded font-bold bg-green-400/10 text-green-400 border border-green-400/30">
+            真实 API 搜索
+          </span>
+          <span v-else class="text-[10px] px-2 py-0.5 rounded font-bold bg-orange-400/10 text-orange-400 border border-orange-400/30">
+            LLM 模拟搜索（未配置 Tavily API Key）
+          </span>
+        </div>
         <div v-if="detail.output.sub_question_id" class="text-gray-400">
           <span class="text-cyber-cyan">子问题：</span>{{ detail.output.sub_question_id }}
         </div>

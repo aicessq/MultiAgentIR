@@ -11,11 +11,19 @@ logger = logging.getLogger(__name__)
 class SearchService:
     def __init__(self) -> None:
         self._client = httpx.AsyncClient(timeout=30.0)
+        self._last_mode: str = "mock"
+
+    @property
+    def last_mode(self) -> str:
+        """Return 'real' if last search used Tavily API, 'mock' if simulated."""
+        return self._last_mode
 
     async def search(self, query: str, max_results: int = 5) -> list[dict]:
         api_key = os.getenv("TAVILY_API_KEY", "")
         if api_key:
-            return await self._tavily_search(query, max_results, api_key)
+            results = await self._tavily_search(query, max_results, api_key)
+            return results
+        self._last_mode = "mock"
         return self._mock_search(query, max_results)
 
     async def _tavily_search(self, query: str, max_results: int, api_key: str) -> list[dict]:
@@ -36,6 +44,7 @@ class SearchService:
                     "publish_date": r.get("published_date"),
                     "credibility_score": 0.6,
                 })
+            self._last_mode = "real"
             return results
         except Exception as e:
             logger.error(f"Tavily search failed: {e}")

@@ -124,4 +124,6 @@ class SearcherAgent(BaseAgent):
         })
 
         # Phase 3: LLM synthesis of real results
-        return await super().run(state, on_event=on_event)
+        result = await super().run(state, on_event=on_event)
+        result["search_mode"] = self._search_service.last_mode
+        return result
