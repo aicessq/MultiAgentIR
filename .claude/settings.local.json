@@ -5,7 +5,10 @@
       "Bash(python -c ' *)",
       "Bash(python *)",
       "Bash(npm run *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(npx vue-tsc *)",
+      "Bash(npx vite *)",
+      "Bash(npx --no-install vue-tsc --noEmit)"
     ]
   }
 }

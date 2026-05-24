@@ -3,18 +3,30 @@
 ## 研究问题
 {{ research_goal }}
 
+## 研究截止日期
+{{ as_of_date }}
+
+所有事实、数据、趋势判断必须以截至 {{ as_of_date }} 可获得的信息为准。
+不得使用晚于该日期发布的来源。
+
 ## 论点图谱（Claim Graph）
-以下是经过分析和审稿的结构化论点：
+以下是经过分析和审稿的结构化论点。备忘录中不得生成未在 Claim Graph 中出现的新事实判断。
 
 ```json
 {{ claim_graph }}
 ```
 
-## 可用来源
+## 可用来源（Source Registry）
 以下是已注册的研究来源，报告中只能引用这些来源：
 
 ```json
 {{ source_registry }}
+```
+
+## 证据目录（Evidence Catalog）
+
+```json
+{{ evidence_catalog }}
 ```
 
 ## 支持方观点
@@ -32,6 +44,31 @@
 ## 综合分析
 {{ synthesis_content }}
 
+{% if repair_context %}
+## 修复指令（上一轮验证发现的问题）
+以下问题必须在本次输出中修复：
+{% for issue in repair_context %}
+- [{{ issue.severity }}] {{ issue.location }}：{{ issue.problem }} → {{ issue.fix }}
+{% endfor %}
+{% endif %}
+
+## 写作硬约束
+1. 不得输出 undefined、null、None、TBD、TODO、待补充、占位符、N/A。
+2. 不得编造 claim_id、evidence_id 或 citation URL。
+3. 不得引用 Source Registry 之外的 URL。
+4. 不得把低置信度 claim 写成确定结论。
+5. 每个 section 必须包含 key_claims。
+6. 每个 key_claim 必须包含 claim_id、sentence、evidence_ids、confidence、source_urls。
+7. 支持方/反对方/中立方观点必须分别绑定 claim_id。
+8. 最终建议必须条件化，不能输出绝对结论。
+9. 风险章节必须输出结构化 risk_register，不得为空。
+
+## 语言强度规则
+- confidence = high：可以使用"显示""达到""表明"。
+- confidence = medium：使用"可能表明""现有资料显示""初步显示"。
+- confidence = low：不得进入核心结论，只能放入 uncertainties 或 limitations。
+- forecast 类型 claim：必须使用"若……则……""在……条件下"。
+
 ## 备忘录结构
 1. 问题定义
 2. 结论先行：在什么条件下成立
@@ -44,30 +81,48 @@
 9. 参考来源
 
 ## 输出格式
-请严格按照以下 JSON 格式输出：
+请严格输出 JSON，不要输出 Markdown 包裹符号。
 
 ```json
 {
+  "schema_version": "memo_v3",
   "title": "备忘录标题",
-  "executive_summary": "结论先行内容",
+  "as_of_date": "{{ as_of_date }}",
+  "executive_summary": {
+    "content": "结论先行内容",
+    "claim_ids": ["clm_001"]
+  },
   "sections": [
     {
       "heading": "章节标题",
       "content": "章节内容",
-      "citations": ["来源URL1"],
-      "claim_ids": ["clm_001"]
+      "key_claims": [
+        {
+          "claim_id": "clm_001",
+          "sentence": "报告中实际使用的事实判断句",
+          "evidence_ids": ["ev_001"],
+          "confidence": "high",
+          "source_urls": ["https://example.com"]
+        }
+      ],
+      "citations": ["https://example.com"],
+      "claim_ids": ["clm_001"],
+      "uncertainties": [],
+      "dropped_claims": []
+    }
+  ],
+  "risk_register": [
+    {
+      "risk": "风险名称",
+      "mechanism": "风险机制",
+      "evidence_claim_ids": ["clm_001"],
+      "likelihood": "medium",
+      "impact": "high",
+      "monitoring_indicators": ["指标1"],
+      "uncertainties": ["不确定性1"]
     }
   ],
   "limitations": ["局限性1"],
   "appendix": ""
 }
 ```
-
-## 注意事项
-1. 结论应该是条件化的，而非绝对化的
-2. 必须公平呈现各方观点
-3. 明确标注不确定性
-4. **每个关键判断必须引用 claim_id** — 将支撑该判断的 claim_id 放入 claim_ids 字段
-5. **不得生成未在 Claim Graph 中出现的新事实判断**
-6. **只能引用"可用来源"中列出的 URL**
-7. 如果正反双方立场高度重叠，应在"关键分歧点"中明确指出真正的差异所在

@@ -71,7 +71,7 @@ async function handleCancel() {
         >
           终止
         </el-button>
-        <el-dropdown v-if="report" trigger="click" class="!ml-2">
+        <el-dropdown v-if="report && (store.currentTask.status === 'completed' || store.currentTask.status === 'failed')" trigger="click" class="!ml-2">
           <el-button size="small" plain>
             下载报告
           </el-button>
@@ -131,7 +131,7 @@ async function handleCancel() {
       </div>
 
       <!-- Report -->
-      <div v-if="report" class="mt-4 bg-cyber-card rounded-xl border border-cyber-border">
+      <div v-if="report && (store.currentTask.status === 'completed' || store.currentTask.status === 'failed')" class="mt-4 bg-cyber-card rounded-xl border border-cyber-border">
         <div class="flex items-center justify-between px-6 pt-4 pb-2">
           <h3 class="font-display text-xs text-cyber-cyan tracking-wider">REPORT</h3>
           <div class="flex gap-2">

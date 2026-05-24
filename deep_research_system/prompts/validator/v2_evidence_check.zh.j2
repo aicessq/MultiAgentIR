@@ -23,6 +23,8 @@
 ### 1. Claim-Evidence 绑定完整性
 - 报告中每个 section 的 claim_ids 是否都能在论点图谱中找到对应的 claim_id？
 - 每个被引用的 claim_id 是否有 evidence_ids 支撑？
+- 每个 key_claim 的 claim_id 是否存在于论点图谱中？
+- 每个 key_claim 是否有 evidence_ids？
 
 ### 2. 来源引用一致性
 - 报告中每个 section 的 citations URL 是否都在"已注册来源"列表中？
@@ -35,6 +37,22 @@
 ### 4. 幻觉检测
 - 报告正文中是否出现了论点图谱中没有的"新事实判断"？
 - 是否有未经证据支撑的数字、百分比或年份？
+
+### 5. 占位符检测
+- 报告正文中是否包含 undefined、null、None、TBD、TODO、待补充、占位、N/A 等占位符内容？
+
+### 6. 风险登记册完整性
+- risk_register 是否存在且至少有 3 项？
+- 每个风险项是否包含 risk、mechanism、evidence_claim_ids？
+- 是否覆盖了盈利能力、价格战、技术路线、海外监管、供应链五类风险？
+
+### 7. 置信度语言一致性
+- confidence = low 的 claim 是否被写成了确定性结论（使用了"显示""达到""表明"等强措辞）？
+- forecast 类型 claim 是否使用了条件化表达？
+
+### 8. 时间边界检查
+- as_of_date 是否存在？
+- 报告中是否有来源的 publish_date 晚于 as_of_date？
 
 ## 输出格式
 ```json

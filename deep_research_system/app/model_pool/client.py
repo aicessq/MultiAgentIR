@@ -86,7 +86,7 @@ class LLMClient:
         messages.append({"role": "user", "content": prompt})
 
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-        body = {"model": model.name, "messages": messages, "temperature": 0.3, "stream": True}
+        body = {"model": model.name, "messages": messages, "temperature": 0.3, "stream": True, "max_tokens": model.max_tokens}
 
         start = time.perf_counter()
         try:
@@ -194,7 +194,7 @@ class LLMClient:
         messages.append({"role": "user", "content": prompt})
 
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-        body = {"model": model.name, "messages": messages, "temperature": 0.3}
+        body = {"model": model.name, "messages": messages, "temperature": 0.3, "max_tokens": model.max_tokens}
 
         start = time.perf_counter()
         try:

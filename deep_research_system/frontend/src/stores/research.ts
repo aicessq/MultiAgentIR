@@ -51,16 +51,21 @@ export const useResearchStore = defineStore('research', () => {
     _pollInterval = setInterval(async () => {
       try {
         const task = await getResearch(taskId)
+        // Preserve existing result if poll response doesn't include one
+        if (!task.result && currentTask.value?.result) {
+          task.result = currentTask.value.result
+        }
+        // Preserve report from report_update if poll result has no report
+        if (task.result && !task.result.report && currentTask.value?.result?.report) {
+          task.result.report = currentTask.value.result.report
+        }
         currentTask.value = task
 
         if (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled') {
           clearInterval(_pollInterval!)
           _pollInterval = null
           loading.value = false
-          if (_sseSource) {
-            _sseSource.close()
-            _sseSource = null
-          }
+          // Don't close SSE here — let the done event handle final result delivery
         }
       } catch {
         if (_pollInterval) clearInterval(_pollInterval)
@@ -68,6 +73,19 @@ export const useResearchStore = defineStore('research', () => {
         loading.value = false
       }
     }, 2000)
+  }
+
+  function flushAgentTokens(agent: string) {
+    const tokens = _tokenBuffer[agent]
+    if (!tokens) return
+    delete _tokenBuffer[agent]
+    if (!agentDetails.value[agent]) {
+      agentDetails.value[agent] = { activityLog: [] }
+    }
+    const detail = agentDetails.value[agent]
+    if (!detail.streamContent) detail.streamContent = ''
+    detail.streamContent += tokens
+    detail.message = detail.streamContent.slice(-80)
   }
 
   function addEvent(event: any) {
@@ -91,18 +109,33 @@ export const useResearchStore = defineStore('research', () => {
       events.value.splice(0, events.value.length - 200)
     }
 
-    if (event.agent) {
-      // Ensure agent detail exists
-      if (!agentDetails.value[event.agent]) {
-        agentDetails.value[event.agent] = { activityLog: [] }
+    // Handle initial state event from SSE stream
+    if (event.type === 'state' && event.data) {
+      const taskData = event.data
+      if (!taskData.result && currentTask.value?.result) {
+        taskData.result = currentTask.value.result
       }
-      const detail = agentDetails.value[event.agent]
+      currentTask.value = taskData
+      return
+    }
+
+    if (event.agent) {
+      const agent = event.agent
+      // Ensure agent detail exists
+      if (!agentDetails.value[agent]) {
+        agentDetails.value[agent] = { activityLog: [] }
+      }
+      const detail = agentDetails.value[agent]
 
       // Update node state based on event type
       if (event.type === 'stage_start') {
-        nodeStates.value[event.agent] = 'running'
+        nodeStates.value[agent] = 'running'
+        // Reset streamContent for fresh start
+        detail.streamContent = ''
       } else if (event.type === 'stage_complete') {
-        nodeStates.value[event.agent] = 'completed'
+        nodeStates.value[agent] = 'completed'
+        // Flush any remaining tokens for this agent
+        flushAgentTokens(agent)
       }
 
       // Track agent details from intermediate events
@@ -131,6 +164,15 @@ export const useResearchStore = defineStore('research', () => {
       currentTask.value.progress = event.progress
     }
 
+    // Handle report_update — push intermediate/final report to task result
+    if (event.type === 'report_update' && event.output && currentTask.value) {
+      if (!currentTask.value.result) {
+        currentTask.value.result = { report: event.output, metrics: {}, audit_trail: [] }
+      } else {
+        currentTask.value.result.report = event.output
+      }
+    }
+
     // Close SSE on done or cancelled
     if (event.type === 'done' || event.type === 'cancelled') {
       flushTokens()  // flush any remaining buffered tokens
@@ -140,6 +182,9 @@ export const useResearchStore = defineStore('research', () => {
         currentTask.value.result = event.result
         currentTask.value.status = 'completed'
         currentTask.value.progress = 100
+        if (event.current_stage) {
+          currentTask.value.current_stage = event.current_stage
+        }
       }
       if (event.type === 'cancelled' && currentTask.value) {
         currentTask.value.status = 'cancelled'

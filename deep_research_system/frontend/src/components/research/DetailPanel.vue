@@ -29,11 +29,21 @@ const agentLabels: Record<string, string> = {
   validator: 'VALIDATOR',
   synthesizer: 'SYNTHESIZER',
   supplementary_search: 'SUPPLEMENTARY SEARCH',
+  repair_writer: 'REPAIR WRITER',
 }
 
 function getAgentLabel(agent: string): string {
   if (agentLabels[agent]) return agentLabels[agent]
   if (agent.startsWith('h_')) return `HYPOTHESIS ${agent.slice(2)}`
+  // Subtask agents: searcher_sq_1 -> SEARCHER #1
+  const sqMatch = agent.match(/^(\w+)_sq_(\d+)$/)
+  if (sqMatch) {
+    const parentLabel = agentLabels[sqMatch[1]] || sqMatch[1].toUpperCase()
+    return `${parentLabel} #${sqMatch[2]}`
+  }
+  // Repair agents: repair_writer_1 -> REPAIR #1
+  const repairMatch = agent.match(/^repair_writer_(\d+)$/)
+  if (repairMatch) return `REPAIR #${repairMatch[1]}`
   return agent.toUpperCase()
 }
 
@@ -56,11 +66,11 @@ function confidenceColor(confidence: number): string {
 
 // Structured output rendering per agent type
 const isPlanner = computed(() => props.agent === 'planner')
-const isSearcher = computed(() => props.agent === 'searcher' || props.agent === 'supplementary_search')
-const isReader = computed(() => props.agent === 'reader')
+const isSearcher = computed(() => props.agent === 'searcher' || props.agent === 'supplementary_search' || /^searcher_sq_\d+$/.test(props.agent))
+const isReader = computed(() => props.agent === 'reader' || /^reader_sq_\d+$/.test(props.agent))
 const isAnalyzer = computed(() => props.agent === 'analyzer')
 const isCritic = computed(() => props.agent === 'critic')
-const isWriter = computed(() => props.agent === 'writer')
+const isWriter = computed(() => props.agent === 'writer' || props.agent === 'repair_writer' || /^repair_writer_\d+$/.test(props.agent))
 const isValidator = computed(() => props.agent === 'validator')
 const isSynthesizer = computed(() => props.agent === 'synthesizer')
 const isDebateBranch = computed(() => props.agent.startsWith('h_'))
@@ -280,13 +290,28 @@ const formattedOutput = computed(() => {
       <!-- ===== WRITER output ===== -->
       <div v-else-if="isWriter && detail?.output" class="space-y-3">
         <div v-if="detail.output.title" class="text-gray-300 font-bold">{{ detail.output.title }}</div>
-        <div v-if="detail.output.executive_summary" class="text-gray-400 text-[11px] border-l-2 border-cyber-cyan/50 pl-2 line-clamp-3">{{ detail.output.executive_summary }}</div>
+        <div v-if="detail.output.as_of_date" class="text-[10px] text-gray-500">
+          <span class="text-cyber-cyan">截止日期：</span>{{ detail.output.as_of_date }}
+        </div>
+        <div v-if="detail.output.executive_summary" class="text-gray-400 text-[11px] border-l-2 border-cyber-cyan/50 pl-2 line-clamp-3">
+          {{ typeof detail.output.executive_summary === 'string' ? detail.output.executive_summary : detail.output.executive_summary?.content }}
+        </div>
         <div v-if="detail.output.sections?.length" class="space-y-1">
           <div class="text-cyber-cyan text-[11px]">章节 ({{ detail.output.sections.length }})</div>
-          <div v-for="(sec, i) in detail.output.sections" :key="i" class="flex items-center gap-2 text-[11px]">
-            <span class="text-gray-300">{{ sec.heading }}</span>
-            <span v-if="sec.claim_ids?.length" class="text-cyber-purple text-[10px]">[{{ sec.claim_ids.join(', ') }}]</span>
-            <span v-if="sec.citations?.length" class="text-gray-500 text-[10px]">{{ sec.citations.length }} 条引用</span>
+          <div v-for="(sec, i) in detail.output.sections" :key="i" class="border border-cyber-border/30 rounded p-1.5">
+            <div class="flex items-center gap-2 text-[11px]">
+              <span class="text-gray-300">{{ sec.heading }}</span>
+              <span v-if="sec.key_claims?.length" class="text-cyber-purple text-[10px]">{{ sec.key_claims.length }} claims</span>
+              <span v-if="sec.citations?.length" class="text-gray-500 text-[10px]">{{ sec.citations.length }} 引用</span>
+            </div>
+            <div v-if="sec.uncertainties?.length" class="text-[10px] text-yellow-400/70 mt-0.5">不确定性: {{ sec.uncertainties.length }}</div>
+            <div v-if="sec.dropped_claims?.length" class="text-[10px] text-gray-500 mt-0.5">已放弃: {{ sec.dropped_claims.length }}</div>
+          </div>
+        </div>
+        <div v-if="detail.output.risk_register?.length" class="space-y-1">
+          <div class="text-cyber-orange text-[11px]">风险登记册 ({{ detail.output.risk_register.length }})</div>
+          <div v-for="(risk, i) in detail.output.risk_register" :key="i" class="text-[10px] text-gray-400 border-l-2 border-cyber-orange/30 pl-2">
+            {{ risk.risk }} <span class="text-gray-500">({{ risk.likelihood }}/{{ risk.impact }})</span>
           </div>
         </div>
         <div v-if="detail.output.limitations?.length" class="text-orange-400 text-[11px]">

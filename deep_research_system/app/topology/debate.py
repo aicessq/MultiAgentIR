@@ -130,15 +130,63 @@ class DebateTopology(BaseTopology):
         state.final_report = report
         self.emit(on_event, {"type": "stage_complete", "agent": "writer", "progress": 90, "output": {"title": report.get("title", ""), "executive_summary": report.get("executive_summary", "")}})
 
-        # Step 7: Validator
+        # Step 7: Validator + Repair Loop
         state.current_stage = "validator"
         state.progress = 95
         self.emit(on_event, {"type": "stage_start", "agent": "validator", "progress": 95})
         logger.info("Stage: Validator")
         validation = await self.validator.run(state)
-        if not validation.get("valid"):
-            logger.warning(f"Validation issues: {validation.get('issues')}")
         self.emit(on_event, {"type": "stage_complete", "agent": "validator", "progress": 98, "output": validation})
+
+        # Repair loop
+        from app.core.config import get_config
+        from app.topology.hierarchical import _wrap_agent_name
+        topo_cfg = get_config().topology.get("debate", {})
+        max_repair_loops = topo_cfg.get("max_repair_loops", 2)
+        repair_attempt = 0
+        while repair_attempt < max_repair_loops:
+            is_valid = validation.get("valid", False)
+            score = validation.get("score", 100)
+            if is_valid and score >= 85:
+                logger.info(f"Validation passed after {repair_attempt} repair(s) (valid={is_valid}, score={score})")
+                break
+            repair_attempt += 1
+            agent_name = f"repair_writer_{repair_attempt}"
+            logger.info(f"Repair loop {repair_attempt}/{max_repair_loops} (valid={is_valid}, score={score})")
+            self.emit(on_event, {
+                "type": "stage_start", "agent": agent_name,
+                "progress": 96, "repair_count": repair_attempt,
+            })
+
+            state.repair_context = validation.get("issues", [])
+            repair_on_event = _wrap_agent_name(on_event, agent_name)
+            report = await self.writer.run(state, on_event=repair_on_event)
+            state.final_report = report
+
+            validation = await self.validator.run(state, on_event=None)
+            logger.info(f"Repair {repair_attempt} validation: valid={validation.get('valid')}, score={validation.get('score')}")
+            self.emit(on_event, {
+                "type": "stage_complete", "agent": agent_name,
+                "progress": 97, "repair_count": repair_attempt, "output": validation,
+            })
+            # Push intermediate report to frontend after each repair
+            self.emit(on_event, {
+                "type": "report_update", "agent": "writer",
+                "progress": 97, "output": state.final_report,
+            })
+
+        state.repair_context = []
+
+        if not validation.get("valid"):
+            logger.warning(f"Validation failed after {repair_attempt} repair(s): {validation.get('issues')}")
+
+        # Emit final report so frontend has the latest version
+        self.emit(on_event, {
+            "type": "report_update",
+            "agent": "writer",
+            "progress": 99,
+            "output": state.final_report,
+        })
 
         state.current_stage = "completed"
         state.progress = 100

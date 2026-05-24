@@ -35,12 +35,18 @@ class SearchSource(BaseModel):
     source_type: str = "unknown"
     publish_date: str | None = None
     credibility_score: float = 0.5
+    # Expanded source metadata
+    publisher: str = ""
+    domain: str = ""
+    reliability: str = "medium"  # "high" | "medium" | "low"
+    allowed_use: list[str] = Field(default_factory=list)
 
 
 class SearcherOutput(BaseModel):
     sub_question_id: str = ""
     queries_used: list[str] = Field(default_factory=list)
     sources: list[SearchSource] = Field(default_factory=list)
+    search_mode: str = "mock"  # "real" | "mock"
     insufficient_evidence: bool = False
     insufficient_evidence_reason: str = ""
 
@@ -77,6 +83,12 @@ class ReaderOutput(BaseModel):
 class AnalyzerClaim(BaseModel):
     claim_id: str = ""
     claim_text: str = ""
+    claim_type: str = "general"  # financial_metric | sales_metric | market_share | technology_claim | regulatory_claim | forecast | risk_claim | causal_claim | general
+    subject: str = ""
+    metric: str = ""
+    value: str = ""
+    unit: str = ""
+    period: str = ""
     evidence_ids: list[str] = Field(default_factory=list)
     confidence: float = 0.5
     caveats: list[str] = Field(default_factory=list)
@@ -115,17 +127,46 @@ class CriticOutput(BaseModel):
 
 # ── Writer ──
 
+class KeyClaim(BaseModel):
+    claim_id: str = ""
+    sentence: str = ""
+    evidence_ids: list[str] = Field(default_factory=list)
+    confidence: str = "medium"  # "high" | "medium" | "low"
+    source_urls: list[str] = Field(default_factory=list)
+
+
 class ReportSection(BaseModel):
     heading: str = ""
     content: str = ""
     citations: list[str] = Field(default_factory=list)
     claim_ids: list[str] = Field(default_factory=list)
+    key_claims: list[KeyClaim] = Field(default_factory=list)
+    uncertainties: list[str] = Field(default_factory=list)
+    dropped_claims: list[str] = Field(default_factory=list)
+
+
+class RiskItem(BaseModel):
+    risk: str = ""
+    mechanism: str = ""
+    evidence_claim_ids: list[str] = Field(default_factory=list)
+    likelihood: str = "medium"  # "low" | "medium" | "high"
+    impact: str = "medium"  # "low" | "medium" | "high"
+    monitoring_indicators: list[str] = Field(default_factory=list)
+    uncertainties: list[str] = Field(default_factory=list)
+
+
+class SourceQualityNote(BaseModel):
+    source_url: str = ""
+    note: str = ""
 
 
 class WriterOutput(BaseModel):
     title: str = ""
+    as_of_date: str = ""
     executive_summary: str = ""
     sections: list[ReportSection] = Field(default_factory=list)
+    risk_register: list[RiskItem] = Field(default_factory=list)
+    source_quality_notes: list[SourceQualityNote] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     appendix: str = ""
 

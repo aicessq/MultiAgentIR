@@ -148,6 +148,7 @@ class ResearchService:
                 "task_id": task_id,
                 "result": result,
                 "progress": 100,
+                "current_stage": "completed",
             })
 
             return result

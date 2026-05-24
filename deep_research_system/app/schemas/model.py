@@ -21,6 +21,7 @@ class ModelSpec(BaseModel):
     cost_tier: Literal["low", "mid", "high"]
     latency_tier: Literal["fast", "medium", "slow"]
     context_window: int = 8000
+    max_tokens: int = 8192
     strengths: list[str] = Field(default_factory=list)
     weaknesses: list[str] = Field(default_factory=list)
     enabled: bool = True
