@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from enum import Enum
+
 from pydantic import BaseModel, Field
 
 
@@ -80,10 +82,18 @@ class ReaderOutput(BaseModel):
 
 # ── Analyzer ──
 
+class ClaimType(str, Enum):
+    FACTUAL = "factual_claim"
+    ANALYTICAL = "analytical_claim"
+    FORECAST = "forecast_claim"
+    RISK = "risk_claim"
+    LIMITATION = "research_limitation"
+
+
 class AnalyzerClaim(BaseModel):
     claim_id: str = ""
     claim_text: str = ""
-    claim_type: str = "general"  # financial_metric | sales_metric | market_share | technology_claim | regulatory_claim | forecast | risk_claim | causal_claim | general
+    claim_type: ClaimType = ClaimType.FACTUAL
     subject: str = ""
     metric: str = ""
     value: str = ""
@@ -108,8 +118,16 @@ class AnalyzerOutput(BaseModel):
 
 # ── Critic ──
 
+class ResolutionAction(str, Enum):
+    BLOCK = "blocker"
+    DOWNGRADE = "downgrade_required"
+    LIMIT_ONLY = "limitations_only"
+    ACCEPTABLE = "acceptable_uncertainties"
+
+
 class CriticFinding(BaseModel):
     severity: str = "medium"  # "critical" | "high" | "medium" | "low"
+    resolution_action: ResolutionAction = ResolutionAction.DOWNGRADE
     target_type: str = "claim"  # "claim" | "section" | "overall"
     target_id: str = ""
     issue_description: str = ""

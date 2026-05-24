@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   report: any
+  claimGraph?: any[]
 }>()
 
 const sections = computed(() => {
@@ -30,6 +31,38 @@ function impactClass(impact: string): string {
   if (impact === 'high') return 'text-red-400'
   if (impact === 'low') return 'text-gray-400'
   return 'text-yellow-400'
+}
+
+const claimTypeMap = computed(() => {
+  const map: Record<string, string> = {}
+  if (props.claimGraph) {
+    for (const c of props.claimGraph) {
+      if (c.claim_id && c.claim_type) map[c.claim_id] = c.claim_type
+    }
+  }
+  return map
+})
+
+function claimTypeClass(claimType: string): string {
+  switch (claimType) {
+    case 'factual_claim': return 'text-blue-400 bg-blue-400/10 border-blue-400/30'
+    case 'analytical_claim': return 'text-green-400 bg-green-400/10 border-green-400/30'
+    case 'forecast_claim': return 'text-purple-400 bg-purple-400/10 border-purple-400/30'
+    case 'risk_claim': return 'text-orange-400 bg-orange-400/10 border-orange-400/30'
+    case 'research_limitation': return 'text-red-400 bg-red-400/10 border-red-400/30'
+    default: return 'text-gray-400 bg-gray-400/10 border-gray-400/30'
+  }
+}
+
+function claimTypeLabel(claimType: string): string {
+  switch (claimType) {
+    case 'factual_claim': return 'FACT'
+    case 'analytical_claim': return 'ANALYSIS'
+    case 'forecast_claim': return 'FORECAST'
+    case 'risk_claim': return 'RISK'
+    case 'research_limitation': return 'LIMITATION'
+    default: return claimType?.toUpperCase() || ''
+  }
 }
 </script>
 
@@ -59,6 +92,11 @@ function impactClass(impact: string): string {
         <div v-for="(kc, j) in section.key_claims" :key="j" class="border border-cyber-border/40 rounded-lg p-2">
           <div class="flex items-center gap-2 mb-1">
             <span class="text-[10px] font-mono text-cyber-purple font-bold">{{ kc.claim_id }}</span>
+            <span
+              v-if="claimTypeMap[kc.claim_id]"
+              class="text-[9px] px-1 py-0.5 rounded border font-mono"
+              :class="claimTypeClass(claimTypeMap[kc.claim_id])"
+            >{{ claimTypeLabel(claimTypeMap[kc.claim_id]) }}</span>
             <span class="text-[10px] px-1.5 py-0.5 rounded" :class="confidenceClass(kc.confidence)">
               {{ kc.confidence }}
             </span>

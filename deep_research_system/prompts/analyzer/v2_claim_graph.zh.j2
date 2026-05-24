@@ -50,6 +50,7 @@
     {
       "claim_id": "clm_001",
       "claim_text": "综合多个来源得出的结论",
+      "claim_type": "factual_claim",
       "evidence_ids": ["ev_sq1_001", "ev_sq2_003"],
       "confidence": 0.8,
       "caveats": ["适用范围有限", "数据来源较旧"],
@@ -73,3 +74,23 @@
 6. confidence_level 可选值：low, medium, high
 7. 如果某个子问题的证据不足，将其未覆盖的点放入 gaps
 8. caveats 记录该结论的适用条件和限制
+
+## claim_type 分类（每个 claim 必须设置）
+- factual_claim：可直接验证的事实（营收数据、产品参数、政策条文、事件时间）
+- analytical_claim：基于多个事实的分析推理（趋势判断、竞争对比、因果分析）
+- forecast_claim：预测性判断（市场规模预测、增长率预期、技术路线展望）
+- risk_claim：风险判断（政策风险、竞争风险、技术风险）
+- research_limitation：研究局限性（数据缺失、来源不足、无法验证的假设）
+
+### research_limitation 处理规则
+- research_limitation 类型的 claim 不得作为章节核心论点
+- 只能输出到报告的 limitations、open_questions 或 data_quality_notes 区域
+- 例如："缺乏 2024 年以后的行业数据"是 research_limitation
+- 例如："基于 2023 年数据推算，2024 年市场规模约为 X"是 factual_claim（带低置信度）
+
+## gaps 输出要求
+每个 gap 必须分类：
+- data_gap：缺少特定数据，但可用替代指标做定性分析
+- source_gap：缺少权威来源，但可基于已知事实推理
+- scope_gap：超出研究范围，标注即可
+不得将所有 gap 都标记为"无法分析"。

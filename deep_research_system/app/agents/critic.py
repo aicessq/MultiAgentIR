@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class CriticAgent(BaseAgent):
     name = "critic"
-    prompt_template_name = "critic/v2_structured_critique.zh.j2"
+    prompt_template_name = "critic/v3_uncertainty_routing.zh.j2"
 
     def requirement(self, state: ResearchState) -> TaskRequirement:
         return TaskRequirement(

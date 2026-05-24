@@ -71,3 +71,11 @@
 2. conditional_conclusions 应该说明不同条件下的不同结论
 3. 如果多个假设实际上说的是同一件事，在 consensus_points 中指出
 4. hypothesis_assessment 中的 key_evidence_ids 必须引用上游的 evidence_id
+
+## 不确定性处理规则
+1. 不得将同一 gap 在多个章节重复扩写。每个 gap 只能在一个位置出现。
+2. 每个章节必须输出正向分析内容（已知事实 + 推理 + 有条件结论）。
+3. 如果证据不足：
+   - 输出"低置信度定性判断 + 需要验证的具体问题"
+   - 不得输出"无法判断""数据不足""需要更多研究"等空泛拒绝
+4. 对于 research_limitation 类型的发现，只放入 open_questions 或 limitations，不进入正文分析。

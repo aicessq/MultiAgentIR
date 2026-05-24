@@ -123,6 +123,7 @@ class ResearchService:
 
             result = {
                 "report": state.final_report,
+                "claim_graph": state.claim_graph,
                 "metrics": {
                     "cost_so_far": round(state.cost_so_far, 4),
                     "latency_ms": round(elapsed, 2),

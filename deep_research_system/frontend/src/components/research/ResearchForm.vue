@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { useResearchStore } from '../../stores/research'
 
+const store = useResearchStore()
 const emit = defineEmits<{
   submit: [query: string, taskType: string, depth: string]
 }>()
@@ -53,7 +55,7 @@ function handleSubmit() {
       <el-select v-model="depth" size="large" class="w-24">
         <el-option v-for="d in depths" :key="d.value" :label="d.label" :value="d.value" />
       </el-select>
-      <el-button type="primary" size="large" @click="handleSubmit" :loading="false">
+      <el-button type="primary" size="large" @click="handleSubmit" :loading="store.loading" :disabled="store.loading">
         开始研究
       </el-button>
     </div>

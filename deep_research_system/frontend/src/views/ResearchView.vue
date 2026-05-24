@@ -18,6 +18,7 @@ const topology = computed(() => store.currentTask?.selected_topology || 'hierarc
 const report = computed(() => store.currentTask?.result?.report)
 const metrics = computed(() => store.currentTask?.result?.metrics)
 const trail = computed(() => store.currentTask?.result?.audit_trail || [])
+const claimGraph = computed(() => store.currentTask?.result?.claim_graph || [])
 
 // Extract debate branch IDs from node states (h_0, h_1, etc.)
 const debateBranches = computed(() => {
@@ -30,7 +31,11 @@ const hasSupplementarySearch = computed(() => {
 async function handleSubmit(query: string, taskType: string, depth: string) {
   selectedAgent.value = null
   store.reset()
-  await store.submitResearch(query, taskType, depth)
+  try {
+    await store.submitResearch(query, taskType, depth)
+  } catch (e: any) {
+    ElMessage.error(e?.message || '研究任务启动失败，请重试')
+  }
 }
 
 function handleSelectAgent(agent: string) {
@@ -149,7 +154,7 @@ async function handleCancel() {
             >Word</button>
           </div>
         </div>
-        <ReportViewer :report="report" />
+        <ReportViewer :report="report" :claim-graph="claimGraph" />
       </div>
 
       <!-- Audit Trail -->

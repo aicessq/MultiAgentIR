@@ -36,6 +36,12 @@ export const useResearchStore = defineStore('research', () => {
       // Wire up SSE for real-time events
       _sseSource = streamResearch(task.task_id, (event) => {
         addEvent(event)
+      }, () => {
+        // SSE error callback — connection dropped
+        _sseSource = null
+        if (loading.value) {
+          loading.value = false
+        }
       })
 
       // Fallback polling in case SSE drops
@@ -51,6 +57,8 @@ export const useResearchStore = defineStore('research', () => {
     _pollInterval = setInterval(async () => {
       try {
         const task = await getResearch(taskId)
+        // Guard: skip if a new task has been started since this poll was scheduled
+        if (currentTask.value?.task_id && currentTask.value.task_id !== taskId) return
         // Preserve existing result if poll response doesn't include one
         if (!task.result && currentTask.value?.result) {
           task.result = currentTask.value.result
@@ -179,7 +187,12 @@ export const useResearchStore = defineStore('research', () => {
       loading.value = false
       // Update task with final result from done event
       if (event.type === 'done' && event.result && currentTask.value) {
-        currentTask.value.result = event.result
+        // Preserve report from report_update if done result doesn't include it
+        const incoming = event.result
+        if (incoming && !incoming.report && currentTask.value?.result?.report) {
+          incoming.report = currentTask.value.result.report
+        }
+        currentTask.value.result = incoming
         currentTask.value.status = 'completed'
         currentTask.value.progress = 100
         if (event.current_stage) {

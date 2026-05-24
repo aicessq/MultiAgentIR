@@ -15,7 +15,12 @@ export interface TaskResult {
   current_stage: string
   selected_topology: string
   created_at: string
-  result: any
+  result: {
+    report?: any
+    claim_graph?: any[]
+    metrics?: any
+    audit_trail?: any[]
+  } | null
   error?: string
 }
 
@@ -34,14 +39,17 @@ export async function getResearch(taskId: string) {
   return data.data as TaskResult
 }
 
-export function streamResearch(taskId: string, onEvent: (event: any) => void): EventSource {
+export function streamResearch(taskId: string, onEvent: (event: any) => void, onError?: () => void): EventSource {
   const es = new EventSource(`/api/research/${taskId}/stream`)
   es.onmessage = (msg) => {
     try {
       onEvent(JSON.parse(msg.data))
     } catch {}
   }
-  es.onerror = () => es.close()
+  es.onerror = () => {
+    es.close()
+    onError?.()
+  }
   return es
 }
 

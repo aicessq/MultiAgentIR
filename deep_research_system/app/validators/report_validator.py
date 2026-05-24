@@ -25,7 +25,7 @@ LOW_QUALITY_DOMAINS = [
     "baijiahao.baidu.com",
 ]
 
-CORE_CLAIM_TYPES = {"financial_metric", "sales_metric", "market_share", "regulatory_claim"}
+CORE_CLAIM_TYPES = {"financial_metric", "sales_metric", "market_share", "regulatory_claim", "factual_claim"}
 
 MIN_SECTION_CONTENT_LENGTH = 100
 MIN_RISK_REGISTER_SIZE = 3
@@ -121,10 +121,57 @@ def validate_report(
         if not risk.get("evidence_claim_ids"):
             issues.append(_issue("medium", "risk_register", f"风险项 {i+1} 缺少 evidence_claim_ids", "补充支撑 claim_id"))
 
-    # 6. Low-quality domain check for core claims
+    # 6. research_limitation claims must not appear in key_claims
+    claim_map = {c.get("claim_id", ""): c for c in claim_graph}
+    for section in sections:
+        heading = section.get("heading", "?")
+        for kc in section.get("key_claims", []):
+            claim_id = kc.get("claim_id", "")
+            claim = claim_map.get(claim_id, {})
+            if claim.get("claim_type") == "research_limitation":
+                issues.append(_issue("high", heading,
+                    f"research_limitation 类型 claim {claim_id} 不得出现在 key_claims 中",
+                    "将该 claim 移至 uncertainties 或 limitations"))
+
+    # 7. Empty or near-empty sections must be flagged
+    for section in sections:
+        heading = section.get("heading", "?")
+        content = section.get("content", "")
+        if len(content.strip()) < 50 and not section.get("key_claims"):
+            issues.append(_issue("high", heading,
+                f"章节 '{heading}' 内容为空或过短",
+                "补充实质性分析内容"))
+
+    # 8. Gaps must not be repeated across multiple sections
+    limitations = report.get("limitations", [])
+    if limitations:
+        gap_mentions: dict[str, list[str]] = {}
+        for section in sections:
+            heading = section.get("heading", "?")
+            content = section.get("content", "")
+            for gap in limitations:
+                if len(gap) >= 10 and gap[:30] in content:
+                    gap_mentions.setdefault(gap, []).append(heading)
+        for gap, headings in gap_mentions.items():
+            if len(headings) > 1:
+                issues.append(_issue("medium", "report",
+                    f"同一 gap 在多个章节重复出现: {gap[:50]}... ({', '.join(headings)})",
+                    "每个 gap 只在一个位置说明"))
+
+    # 9. Citation dump detection
+    for section in sections:
+        heading = section.get("heading", "?")
+        citations = section.get("citations", [])
+        key_claims = section.get("key_claims", [])
+        if len(citations) > 10 and len(key_claims) < 3:
+            issues.append(_issue("medium", heading,
+                f"章节 '{heading}' 可能存在 citation dump（{len(citations)} citations, {len(key_claims)} key_claims）",
+                "减少 citations 数量，增加 key_claims 实质分析"))
+
+    # 10. Low-quality domain check for core claims
     _check_source_quality(report, source_registry, claim_graph, issues, warnings)
 
-    # 7. as_of_date vs source publish_date
+    # 11. as_of_date vs source publish_date
     if as_of_date:
         _check_date_conflicts(as_of_date, source_registry, warnings)
 

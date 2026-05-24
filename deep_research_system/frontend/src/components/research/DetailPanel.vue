@@ -64,6 +64,48 @@ function confidenceColor(confidence: number): string {
   return 'text-red-400'
 }
 
+function resolutionActionClass(action: string): string {
+  switch (action) {
+    case 'blocker': return 'text-red-400 bg-red-400/10 border-red-400/30'
+    case 'downgrade_required': return 'text-orange-400 bg-orange-400/10 border-orange-400/30'
+    case 'limitations_only': return 'text-gray-400 bg-gray-400/10 border-gray-400/30'
+    case 'acceptable_uncertainties': return 'text-green-400 bg-green-400/10 border-green-400/30'
+    default: return 'text-gray-400 bg-gray-400/10 border-gray-400/30'
+  }
+}
+
+function resolutionActionLabel(action: string): string {
+  switch (action) {
+    case 'blocker': return 'BLOCKER'
+    case 'downgrade_required': return 'DOWNGRADE'
+    case 'limitations_only': return 'LIMIT-ONLY'
+    case 'acceptable_uncertainties': return 'ACCEPTABLE'
+    default: return action?.toUpperCase() || ''
+  }
+}
+
+function claimTypeClass(claimType: string): string {
+  switch (claimType) {
+    case 'factual_claim': return 'text-blue-400 bg-blue-400/10 border-blue-400/30'
+    case 'analytical_claim': return 'text-green-400 bg-green-400/10 border-green-400/30'
+    case 'forecast_claim': return 'text-purple-400 bg-purple-400/10 border-purple-400/30'
+    case 'risk_claim': return 'text-orange-400 bg-orange-400/10 border-orange-400/30'
+    case 'research_limitation': return 'text-red-400 bg-red-400/10 border-red-400/30'
+    default: return 'text-gray-400 bg-gray-400/10 border-gray-400/30'
+  }
+}
+
+function claimTypeLabel(claimType: string): string {
+  switch (claimType) {
+    case 'factual_claim': return 'FACT'
+    case 'analytical_claim': return 'ANALYSIS'
+    case 'forecast_claim': return 'FORECAST'
+    case 'risk_claim': return 'RISK'
+    case 'research_limitation': return 'LIMITATION'
+    default: return claimType?.toUpperCase() || ''
+  }
+}
+
 // Structured output rendering per agent type
 const isPlanner = computed(() => props.agent === 'planner')
 const isSearcher = computed(() => props.agent === 'searcher' || props.agent === 'supplementary_search' || /^searcher_sq_\d+$/.test(props.agent))
@@ -229,6 +271,11 @@ const formattedOutput = computed(() => {
           <div v-for="claim in detail.output.claims" :key="claim.claim_id" class="border border-cyber-border/50 rounded-lg p-2">
             <div class="flex items-center gap-2 mb-1">
               <span class="text-cyber-purple text-[10px] font-bold">{{ claim.claim_id }}</span>
+              <span
+                v-if="claim.claim_type"
+                class="text-[9px] px-1 py-0.5 rounded border font-mono"
+                :class="claimTypeClass(claim.claim_type)"
+              >{{ claimTypeLabel(claim.claim_type) }}</span>
               <span class="text-[10px]" :class="confidenceColor(claim.confidence)">置信度 {{ claim.confidence }}</span>
               <span v-if="claim.supporting_count" class="text-green-400 text-[10px]">+{{ claim.supporting_count }}</span>
               <span v-if="claim.contradicting_count" class="text-red-400 text-[10px]">-{{ claim.contradicting_count }}</span>
@@ -268,6 +315,11 @@ const formattedOutput = computed(() => {
           <div v-for="(f, i) in detail.output.findings" :key="i" class="border border-cyber-border/50 rounded-lg p-2">
             <div class="flex items-center gap-2 mb-1">
               <span class="text-[10px] px-1.5 py-0.5 rounded border font-bold" :class="severityClass(f.severity)">{{ f.severity }}</span>
+              <span
+                v-if="f.resolution_action"
+                class="text-[9px] px-1 py-0.5 rounded border font-mono"
+                :class="resolutionActionClass(f.resolution_action)"
+              >{{ resolutionActionLabel(f.resolution_action) }}</span>
               <span class="text-gray-500 text-[10px]">{{ f.target_type }}: {{ f.target_id }}</span>
             </div>
             <div class="text-gray-300 text-[11px]">{{ f.issue_description }}</div>
@@ -284,6 +336,20 @@ const formattedOutput = computed(() => {
         <div v-if="detail.output.logic_flaws?.length" class="space-y-1">
           <div class="text-red-400 text-[11px]">逻辑漏洞</div>
           <div v-for="(l, i) in detail.output.logic_flaws" :key="i" class="text-gray-400 text-[11px]">- {{ l }}</div>
+        </div>
+        <div v-if="detail.output.uncertainty_summary" class="mt-2 flex gap-3 text-[10px]">
+          <span v-if="detail.output.uncertainty_summary.blockers" class="text-red-400">
+            {{ detail.output.uncertainty_summary.blockers }} blocker
+          </span>
+          <span v-if="detail.output.uncertainty_summary.downgrade_required" class="text-orange-400">
+            {{ detail.output.uncertainty_summary.downgrade_required }} downgrade
+          </span>
+          <span v-if="detail.output.uncertainty_summary.limitations_only" class="text-gray-400">
+            {{ detail.output.uncertainty_summary.limitations_only }} limit-only
+          </span>
+          <span v-if="detail.output.uncertainty_summary.acceptable" class="text-green-400">
+            {{ detail.output.uncertainty_summary.acceptable }} acceptable
+          </span>
         </div>
       </div>
 

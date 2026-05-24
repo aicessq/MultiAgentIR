@@ -51,7 +51,7 @@ npx vue-tsc --noEmit # Type-check only
 
 **Prompts** (`prompts/`) — Jinja2 templates per agent. `app/prompts/loader.py` loads from disk, `renderer.py` renders with context. Templates are in `prompts/{agent}/` directories.
 
-**Validators** (`app/validators/report_validator.py`) — Deterministic pre-check: placeholder detection, claim_id existence, source URL validation, risk_register completeness, as_of_date conflicts. Runs before LLM validator.
+**Validators** (`app/validators/report_validator.py`) — Deterministic pre-check: placeholder detection, claim_id existence, source URL validation, risk_register completeness, as_of_date conflicts, research_limitation routing (must not appear in key_claims), empty section detection, gap deduplication across sections, citation dump detection. Runs before LLM validator.
 
 **Services** (`app/services/`) — `ResearchService` manages task lifecycle, SSE pub/sub, caching. `SearchService` wraps Tavily API with LLM-simulated fallback.
 
@@ -84,7 +84,7 @@ npx vue-tsc --noEmit # Type-check only
 
 - **Parallel sub-tasks**: Topology creates separate agent instances per sub-question, runs via `asyncio.gather`, emits events with subtask-specific agent names (`searcher_sq_1`)
 - **Event wrapping**: `_wrap_agent_name()` renames agent events for subtask/composite nodes without affecting topology-level `stage_start/stage_complete`
-- **Repair loop**: Writer → Validator → if score < 85, re-run writer with `repair_context` (validation issues). Max 2 attempts. Validator runs with `on_event=None` during repair to avoid overwriting repair_writer node state.
+- **Repair loop**: Writer → Validator → if score < 85, re-run writer with `repair_context` (validation issues). Max 2 attempts. Each repair uses unique agent name `repair_writer_{N}`. Validator runs with `on_event=None` during repair to avoid overwriting repair_writer node state.
 - **Supplementary search loop**: Critic → if `needs_more_research`, run searcher with critic's suggested queries → re-analyze → re-critic. Max 1 loop.
 - **Token streaming**: LLM streams tokens → `agent_stream_token` events → frontend buffers per agent → flushes every 50ms → updates node activity text
 - **Deterministic validation**: `report_validator.py` runs code-level checks (no LLM) before the LLM validator. Fails fast on high-severity issues.
@@ -102,5 +102,8 @@ npx vue-tsc --noEmit # Type-check only
 
 - All agent prompts are Jinja2 templates in `prompts/{agent}/`, versioned by filename (e.g., `v3_hypothesis.zh.j2`)
 - Agent output parsing: `BaseAgent._parse_output()` extracts first JSON object from LLM response (finds `{`...`}`)
-- Frontend agent names must match backend: `planner`, `searcher`, `reader`, `analyzer`, `critic`, `writer`, `validator`, `synthesizer`, `supplementary_search`, `repair_writer`, `searcher_sq_{id}`, `reader_sq_{id}`, `h_{index}`
+- Frontend agent names must match backend: `planner`, `searcher`, `reader`, `analyzer`, `critic`, `writer`, `validator`, `synthesizer`, `supplementary_search`, `repair_writer_{N}`, `searcher_sq_{id}`, `reader_sq_{id}`, `h_{index}`
 - SSE event types: `stage_start`, `stage_complete`, `agent_model_selected`, `agent_thinking`, `agent_output`, `agent_stream_token`, `subtask_complete`, `report_update`, `done`, `cancelled`, `error`
+- Claim taxonomy (`app/schemas/agent_outputs.py`): `ClaimType` enum — `factual_claim`, `analytical_claim`, `forecast_claim`, `risk_claim`, `research_limitation`. Every claim must have a type. `research_limitation` claims must not appear in section key_claims.
+- Critic resolution routing: `ResolutionAction` enum — `blocker`, `downgrade_required`, `limitations_only`, `acceptable_uncertainties`. Every critic finding must include a resolution_action.
+- Result payload (`research_service._execute`) includes `report`, `claim_graph`, `metrics`, `audit_trail`. Frontend uses claim_graph to look up claim_type by claim_id for rendering.

@@ -70,7 +70,8 @@ function buildDebateLayout(branches: string[]) {
   nodes.push(
     { id: 'critic', type: 'agent', position: { x: 500, y: 200 }, data: { label: 'CRITIC', agent: 'critic', status: 'idle' } },
     { id: 'synthesizer', type: 'agent', position: { x: 720, y: 200 }, data: { label: 'SYNTHESIZER', agent: 'synthesizer', status: 'idle' } },
-    { id: 'writer', type: 'agent', position: { x: 940, y: 200 }, data: { label: 'WRITER', agent: 'writer', status: 'idle' } },
+    { id: 'writer', type: 'agent', position: { x: 940, y: 120 }, data: { label: 'WRITER', agent: 'writer', status: 'idle' } },
+    { id: 'validator', type: 'agent', position: { x: 940, y: 320 }, data: { label: 'VALIDATOR', agent: 'validator', status: 'idle' } },
   )
   return nodes
 }
@@ -86,6 +87,7 @@ function buildDebateEdges(branches: string[]) {
   edges.push(
     { id: `e${offset}`, source: 'critic', target: 'synthesizer', animated: true, type: 'smoothstep' },
     { id: `e${offset + 1}`, source: 'synthesizer', target: 'writer', animated: true, type: 'smoothstep' },
+    { id: `e${offset + 2}`, source: 'writer', target: 'validator', animated: true, type: 'smoothstep' },
   )
   return edges
 }
@@ -309,14 +311,15 @@ function updateDataOnly() {
   injectSubtaskNodes(activeAgents)
 
   // Update data/status on existing nodes (do NOT touch position)
-  for (let i = 0; i < flowNodes.value.length; i++) {
-    const node = flowNodes.value[i]
+  // Use map + array replacement to ensure VueFlow detects changes
+  let changed = false
+  const updated = flowNodes.value.map(node => {
     const detail = props.agentDetails?.[node.data.agent]
     const newActivity = detail?.message
     const newStatus = props.nodeStates[node.data.agent] || 'idle'
-    // Only replace if data actually changed to avoid unnecessary VueFlow re-renders
     if (node.data.status !== newStatus || node.data.activity !== newActivity || node.data.model !== detail?.model) {
-      flowNodes.value[i] = {
+      changed = true
+      return {
         ...node,
         data: {
           ...node.data,
@@ -326,6 +329,10 @@ function updateDataOnly() {
         },
       }
     }
+    return node
+  })
+  if (changed) {
+    flowNodes.value = updated
   }
 
   // Update edges
