@@ -191,10 +191,18 @@ class WriterOutput(BaseModel):
 
 # ── Debate ──
 
+
+class DebatePosition(str, Enum):
+    """Unified debate position enum - replaces ad-hoc h_0, h_1, pro, con."""
+    SUPPORT = "support"
+    OPPOSE = "oppose"
+    ALTERNATIVE = "alternative"
+
+
 class DebateBranchOutput(BaseModel):
     branch: str = ""
+    position: DebatePosition = DebatePosition.SUPPORT
     hypothesis: str = ""
-    position: str = ""
     evidence: list[Evidence] = Field(default_factory=list)
     arguments: list[str] = Field(default_factory=list)
     supporting_claims: list[str] = Field(default_factory=list)

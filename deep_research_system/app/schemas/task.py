@@ -1,8 +1,29 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+class RunStatus(str, Enum):
+    """Terminal states for a research run."""
+    QUEUED = "queued"
+    RUNNING = "running"
+    INTERRUPTED = "interrupted"
+    CANCELLING = "cancelling"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+    COMPLETED_WITH_WARNINGS = "completed_with_warnings"
+    FAILED_QUALITY_GATE = "failed_quality_gate"
+    FAILED = "failed"
+
+
+class ResearchStrategy(str, Enum):
+    """Research topology strategy."""
+    AUTO = "auto"
+    HIERARCHICAL = "hierarchical"
+    DEBATE = "debate"
 
 
 class TaskSpec(BaseModel):
